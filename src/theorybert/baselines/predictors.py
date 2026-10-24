@@ -1,7 +1,6 @@
 import re
 from typing import Protocol
 from theorybert.data.generators import pattern_dfa, modulo_dfa
-from theorybert.models.decoding import decode_candidates
 
 
 class Predictor(Protocol):
@@ -46,6 +45,7 @@ class Learned:
 
     def predict(self, description, budget=5):
         import torch
+        from theorybert.models.decoding import decode_candidates
 
         encoded = self.tokenizer(
             description,

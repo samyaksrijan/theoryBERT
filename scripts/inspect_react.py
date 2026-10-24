@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 from playwright.sync_api import expect, sync_playwright
@@ -26,7 +27,7 @@ def main():
             page.goto(args.base_url + path)
             expect(page.get_by_role("heading", level=1)).to_be_visible()
             page.evaluate("document.fonts.ready")
-            expect(page.get_by_text("Runs locally", exact=True)).to_be_visible()
+            expect(page.get_by_text(re.compile(r"^(Runs locally|Hosted demo)$"))).to_be_visible()
 
         def shot(name):
             page.wait_for_timeout(350)

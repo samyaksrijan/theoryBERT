@@ -150,3 +150,11 @@ The [prompt audit](docs/COMPLETION.md) maps the requirements to implementation a
 For live frontend editing, run `.venv/bin/python -m theorybert.web --port 8502` and, in `frontend/`, run `npm run dev`. Vite serves **http://localhost:5173** and proxies `/api` to the Python engine. For normal use, the single-server launcher above is sufficient.
 
 The original Streamlit interface remains available with `streamlit run app.py --server.port 8503`. Its browser scripts are `scripts/inspect_ui.py` and `scripts/inspect_advanced_ui.py`; those scripts target the legacy interface on port 8501 and are not the acceptance tests for the React product. See [docs/UI-DESIGN.md](docs/UI-DESIGN.md) for the new design and interaction model.
+
+## Render deployment
+
+The repository includes a multi-stage `Dockerfile` and `render.yaml`. Render builds the React frontend, installs Cairo/Pango/ffmpeg, then serves the frontend and Python API together with a single Uvicorn process bound to `0.0.0.0:$PORT`. The health endpoint is `/api/health`.
+
+The free hosted demo installs `requirements-web.txt`, which supports reference demonstrations, the rule baseline, independent DFA/CFG verification, interactive canvases and real Manim video exports. It does not install PyTorch/Transformers or include a trained checkpoint. Research training and learned-checkpoint use remain available in the full local installation. Small recorded validation reports in `data/research/` describe the executed local runs, not Render hardware.
+
+Use one application process: verified result handles are kept in process memory. The free configuration runs one background task at a time, with a second queued request allowed. Browser inputs and session snapshots persist in browser storage. Render's free filesystem is ephemeral: cached videos and server verification handles disappear on restart; verify and export again when needed. Free services also sleep after inactivity and may take a moment to wake up. See [Render Docker deployment](https://render.com/docs/docker) and [free service limits](https://render.com/docs/free).

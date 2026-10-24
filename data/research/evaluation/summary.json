@@ -1,0 +1,38 @@
+{
+  "semantic": {
+    "supported": 0.2,
+    "raw_equivalence": 0.2,
+    "first_candidate_accuracy": 0.2,
+    "success_within_budget": 0.2,
+    "structural_validity": 0.2,
+    "canonical_exact_match": 0.2,
+    "transition_table_exact_match": 0.2,
+    "released": 0.2,
+    "prediction_seconds": 1.325319753959775e-05,
+    "verification_seconds": 1.879470146377571e-05,
+    "rendering_seconds": null,
+    "fertility": null,
+    "examples": 40,
+    "unique_languages": 13,
+    "correctness_among_released": 1.0,
+    "incorrect_candidates_released": 0
+  },
+  "structural": {
+    "supported": 0.0,
+    "raw_equivalence": 0.0,
+    "first_candidate_accuracy": 0.0,
+    "success_within_budget": 0.0,
+    "structural_validity": 0.0,
+    "canonical_exact_match": 0.0,
+    "transition_table_exact_match": 0.0,
+    "released": 0.0,
+    "prediction_seconds": 2.6249908842146397e-06,
+    "verification_seconds": 1.1250085663050413e-06,
+    "rendering_seconds": null,
+    "fertility": null,
+    "examples": 1,
+    "unique_languages": 1,
+    "correctness_among_released": null,
+    "incorrect_candidates_released": 0
+  }
+}

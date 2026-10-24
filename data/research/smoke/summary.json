@@ -1,0 +1,121 @@
+{
+  "status": "smoke-trained; tiny random backbone",
+  "device": "cpu",
+  "frozen_weights_unchanged": true,
+  "trainable_parameters": 13680,
+  "training_seconds": 0.18603616699692793,
+  "peak_memory_bytes": null,
+  "embedding_audit": [
+    {
+      "token": "\u03b4",
+      "original_subwords": [
+        1
+      ],
+      "random_fallback": true,
+      "initial_norm": 0.11836255341768265,
+      "training_surface_occurrences": 5,
+      "training_token_id_occurrences": 5,
+      "final_norm": 0.11852823197841644
+    },
+    {
+      "token": "\u03a3",
+      "original_subwords": [
+        1
+      ],
+      "random_fallback": true,
+      "initial_norm": 0.10996346175670624,
+      "training_surface_occurrences": 2,
+      "training_token_id_occurrences": 2,
+      "final_norm": 0.11000612378120422
+    },
+    {
+      "token": "\u03b5",
+      "original_subwords": [
+        1
+      ],
+      "random_fallback": true,
+      "initial_norm": 0.10471414774656296,
+      "training_surface_occurrences": 0,
+      "training_token_id_occurrences": 0,
+      "final_norm": 0.10471383482217789
+    },
+    {
+      "token": "q0",
+      "original_subwords": [
+        1
+      ],
+      "random_fallback": true,
+      "initial_norm": 0.08201254904270172,
+      "training_surface_occurrences": 9,
+      "training_token_id_occurrences": 9,
+      "final_norm": 0.08229029178619385
+    },
+    {
+      "token": "q1",
+      "original_subwords": [
+        1
+      ],
+      "random_fallback": true,
+      "initial_norm": 0.11948736011981964,
+      "training_surface_occurrences": 4,
+      "training_token_id_occurrences": 4,
+      "final_norm": 0.11937279999256134
+    },
+    {
+      "token": "q2",
+      "original_subwords": [
+        1
+      ],
+      "random_fallback": true,
+      "initial_norm": 0.11158744990825653,
+      "training_surface_occurrences": 0,
+      "training_token_id_occurrences": 0,
+      "final_norm": 0.11158712208271027
+    },
+    {
+      "token": "DFA",
+      "original_subwords": [
+        1
+      ],
+      "random_fallback": true,
+      "initial_norm": 0.11630026251077652,
+      "training_surface_occurrences": 0,
+      "training_token_id_occurrences": 0,
+      "final_norm": 0.11629991233348846
+    },
+    {
+      "token": "CFG",
+      "original_subwords": [
+        1
+      ],
+      "random_fallback": true,
+      "initial_norm": 0.09276724606752396,
+      "training_surface_occurrences": 0,
+      "training_token_id_occurrences": 0,
+      "final_norm": 0.09276696294546127
+    },
+    {
+      "token": "\u2192",
+      "original_subwords": [
+        1
+      ],
+      "random_fallback": true,
+      "initial_norm": 0.11881669610738754,
+      "training_surface_occurrences": 0,
+      "training_token_id_occurrences": 0,
+      "final_norm": 0.1188163310289383
+    },
+    {
+      "token": "\u2261",
+      "original_subwords": [
+        1
+      ],
+      "random_fallback": true,
+      "initial_norm": 0.10648363828659058,
+      "training_surface_occurrences": 1,
+      "training_token_id_occurrences": 1,
+      "final_norm": 0.10613492131233215
+    }
+  ],
+  "smoke_update_and_reload_checks": true
+}

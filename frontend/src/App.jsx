@@ -195,6 +195,10 @@ function PageIntro({ eyebrow, title, description, children }) {
 }
 
 export default function App() {
+  const [hosted, setHosted] = useState(
+    () =>
+      !["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname),
+  );
   const [catalog, setCatalog] = useState(null),
     [connected, setConnected] = useState(null);
   const [settings, setSettings] = useStorageState(
@@ -234,8 +238,9 @@ export default function App() {
     let live = true;
     const refresh = () =>
       Promise.all([api("/health"), api("/catalog")])
-        .then(([, data]) => {
+        .then(([health, data]) => {
           if (live) {
+            setHosted(Boolean(health.hosted));
             setConnected(true);
             setCatalog(data);
           }
@@ -322,6 +327,7 @@ export default function App() {
         <Landing
           catalog={catalog}
           connected={connected}
+          hosted={hosted}
           openExample={openExample}
           openGuide={() => setGuideOpen(true)}
           openSettings={() => setSettingsOpen(true)}
@@ -415,12 +421,14 @@ export default function App() {
               className={`connection-dot ${connected === false ? "offline" : ""}`}
             />
             <div>
-              Local engine
+              {hosted ? "Hosted engine" : "Local engine"}
               <small>
                 {connected === false
                   ? "Connection unavailable"
                   : connected
-                    ? "Connected to your machine"
+                    ? hosted
+                      ? "Connected to Render"
+                      : "Connected to your machine"
                     : "Connecting…"}
               </small>
             </div>
@@ -451,7 +459,11 @@ export default function App() {
               <span
                 className={`connection-dot ${connected === false ? "offline" : ""}`}
               />
-              {connected === false ? "Engine offline" : "Runs locally"}
+              {connected === false
+                ? "Engine offline"
+                : hosted
+                  ? "Hosted demo"
+                  : "Runs locally"}
             </span>
             <button
               className="topbar-help"
@@ -469,8 +481,9 @@ export default function App() {
         {connected === false && (
           <div className="connection-banner" role="alert">
             <AlertCircle size={16} />
-            The local engine is unavailable. Start the Python server to verify
-            and render your work.
+            {hosted
+              ? "The engine is waking up or unavailable. Please retry in a moment."
+              : "The local engine is unavailable. Start the Python server to verify and render your work."}
             <button
               onClick={() =>
                 api("/health")
@@ -2601,7 +2614,7 @@ function Research() {
           <div className="panel-heading">
             <h3>
               <Monitor size={17} />
-              Local environment
+              Validation environment
             </h3>
             <Badge tone="success">
               {data?.environment?.minimal_text_render === "passed"

@@ -1,0 +1,16 @@
+{
+  "python": "3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]",
+  "platform": "macOS-26.5.2-arm64-arm-64bit",
+  "ffmpeg": "/opt/homebrew/bin/ffmpeg",
+  "torch": "2.14.1",
+  "transformers": "4.57.6",
+  "streamlit": "1.66.1",
+  "nltk": "3.10.4",
+  "manim": "0.22.0",
+  "compute": {
+    "cuda": false,
+    "mps": true,
+    "cpu": true
+  },
+  "minimal_text_render": "passed"
+}

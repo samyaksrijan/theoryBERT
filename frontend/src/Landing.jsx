@@ -380,6 +380,7 @@ const topicChips = [
 export default function Landing({
   catalog,
   connected,
+  hosted,
   openExample,
   openGuide,
   openSettings,
@@ -601,9 +602,13 @@ export default function Landing({
               <span className="landing-local-status">
                 <i className={connected === false ? "is-offline" : ""} />
                 {connected === false
-                  ? "Local engine offline"
+                  ? hosted
+                    ? "Hosted engine offline"
+                    : "Local engine offline"
                   : connected
-                    ? "Runs locally"
+                    ? hosted
+                      ? "Hosted demo"
+                      : "Runs locally"
                     : "Connecting…"}
               </span>
             </div>

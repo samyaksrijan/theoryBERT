@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: theorybert
+    runtime: docker
+    repo: https://github.com/samyaksrijan/theoryBERT
+    branch: main
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: THEORYBERT_HOSTED
+        value: "1"
+      - key: THEORYBERT_WORKERS
+        value: "1"
+      - key: THEORYBERT_MAX_JOBS
+        value: "2"

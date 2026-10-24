@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 import importlib.util
 import json
+import os
 from pathlib import Path
 import re
 import threading
@@ -27,7 +28,11 @@ from theorybert.rendering.renderer import payload_for, render, seal_tree
 ROOT = Path(__file__).resolve().parents[2]
 DIST = ROOT / "frontend" / "dist"
 VIDEO_CACHE = ROOT / "artifacts" / "videos"
-workers = ThreadPoolExecutor(max_workers=2, thread_name_prefix="theorybert")
+workers = ThreadPoolExecutor(
+    max_workers=max(1, int(os.environ.get("THEORYBERT_WORKERS", "2"))),
+    thread_name_prefix="theorybert",
+)
+MAX_JOBS = max(1, int(os.environ.get("THEORYBERT_MAX_JOBS", "4")))
 lock = threading.RLock()
 jobs = OrderedDict()
 results = OrderedDict()
@@ -305,7 +310,7 @@ async def submit(request):
         ):
             raise ValueError("Choose a DFA, grammar, or render task.")
         with lock:
-            if sum(j["status"] == "running" for j in jobs.values()) >= 4:
+            if sum(j["status"] == "running" for j in jobs.values()) >= MAX_JOBS:
                 return JSONResponse(
                     {
                         "error": "The local engine is busy. Wait for the current task to finish."
@@ -382,6 +387,7 @@ async def health(request):
         {
             "status": "ready",
             "engine": "TheoryBERT",
+            "hosted": os.environ.get("THEORYBERT_HOSTED") == "1",
             "rendering": importlib.util.find_spec("manim") is not None,
         }
     )
@@ -389,10 +395,15 @@ async def health(request):
 
 async def research(request):
     def read_json(path):
-        try:
-            return json.loads((ROOT / path).read_text())
-        except (ValueError, OSError):
-            return None
+        for candidate in (
+            ROOT / path,
+            ROOT / "data" / "research" / Path(path).relative_to("artifacts"),
+        ):
+            try:
+                return json.loads(candidate.read_text())
+            except (ValueError, OSError):
+                continue
+        return None
 
     return JSONResponse(
         {
@@ -457,11 +468,12 @@ def main():
     parser = argparse.ArgumentParser(
         description="Run the TheoryBERT React product locally."
     )
-    parser.add_argument("--port", type=int, default=8501)
+    parser.add_argument("--host", default=os.environ.get("HOST", "127.0.0.1"))
+    parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8501")))
     parser.add_argument("--reload", action="store_true")
     args = parser.parse_args()
     uvicorn.run(
-        "theorybert.web:app", host="127.0.0.1", port=args.port, reload=args.reload
+        "theorybert.web:app", host=args.host, port=args.port, reload=args.reload
     )
 
 

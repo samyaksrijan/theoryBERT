@@ -1,0 +1,17 @@
+.git
+.venv*
+**/__pycache__
+.pytest_cache
+.ruff_cache
+**/*.egg-info
+artifacts
+media
+checkpoints
+data/generated
+frontend/node_modules
+frontend/dist
+.DS_Store
+.env
+.env.*
+*.pem
+*.key
