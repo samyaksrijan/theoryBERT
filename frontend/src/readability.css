@@ -1,0 +1,880 @@
+/* Product typography: readable at normal desktop zoom and on small screens. */
+.page-intro p {
+  font-size: 13px;
+  color: #75677d;
+}
+.page-intro .eyebrow {
+  color: #75677d;
+  font-size: 9px;
+}
+.breadcrumb,
+.topbar-help {
+  font-size: 12px;
+}
+.local-pill {
+  font-size: 11px;
+  color: #75677d;
+}
+.page-actions .button {
+  font-size: 12px;
+}
+.nav-item {
+  font-size: 13px;
+}
+.nav-group-label {
+  color: #75677d;
+  font-size: 9px;
+}
+.brand small {
+  color: #9a8c9f;
+}
+.sidebar-note h3 {
+  font-size: 13px;
+  color: #f9e8f0;
+}
+.sidebar-note p {
+  font-size: 11px;
+  color: #9a8c9f;
+}
+.sidebar-note button {
+  font-size: 11px;
+}
+.local-status {
+  font-size: 11px;
+}
+.local-status small {
+  color: #9a8c9f;
+  font-size: 9px;
+}
+.topbar-help {
+  color: #75677d;
+}
+.hero-copy p {
+  font-size: 13px;
+  color: #d8d0dc;
+}
+.hero-actions .button {
+  font-size: 12px;
+}
+.hero-secondary {
+  font-size: 11px;
+  color: #d8d0dc;
+}
+.hero-diagram-label {
+  color: #9a8c9f;
+  font-size: 8px;
+}
+.hero-diagram-label > span:last-child {
+  color: #9a8c9f;
+  font-size: 7px;
+}
+.hero-tokens > span {
+  color: #9a8c9f;
+  font-size: 8px;
+}
+.hero-tokens .hero-example-badge {
+  color: #9a8c9f;
+  font-size: 6px;
+}
+.overview-principles b {
+  font-size: 11px;
+  color: #4f4058;
+}
+.overview-principles small {
+  font-size: 10px;
+  color: #75677d;
+}
+.section-heading .eyebrow,
+.mode-card > .eyebrow {
+  font-size: 9px;
+  color: #75677d;
+}
+.section-heading .text-link {
+  font-size: 12px;
+}
+.mode-card p {
+  font-size: 12px;
+  color: #75677d;
+}
+.mode-card-foot {
+  font-size: 11px;
+  color: #75677d;
+}
+.panel-heading h3 {
+  font-size: 14px;
+  color: #25202e;
+}
+.recent-panel .badge {
+  font-size: 8px;
+}
+.recent-empty h4 {
+  font-size: 13px;
+  color: #4f4058;
+}
+.recent-empty p {
+  font-size: 11px;
+  color: #75677d;
+}
+.recent-empty .text-link,
+.how-panel > .text-link {
+  font-size: 11px;
+}
+.how-panel > .eyebrow {
+  font-size: 9px;
+  color: #75677d;
+}
+.how-step > span {
+  font-size: 10px;
+  color: #75677d;
+}
+.how-step b {
+  font-size: 12px;
+  color: #4f4058;
+}
+.how-step p {
+  font-size: 11px;
+  color: #75677d;
+}
+.session-row b {
+  font-size: 12px;
+  color: #4f4058;
+}
+.session-row small {
+  font-size: 10px;
+  color: #75677d;
+}
+.studio-panel-title h2 {
+  font-size: 14px;
+}
+.field-label {
+  font-size: 12px;
+  color: #4f4058;
+}
+.field-label > span {
+  font-size: 8px;
+  color: #75677d;
+}
+.input-panel > .field-label:first-of-type {
+  font-size: 8px;
+  color: #75677d;
+}
+.example-chips button {
+  font-size: 10px;
+  color: #75677d;
+  padding: 8px 9px;
+}
+.example-chips button.selected {
+  color: #b6326a;
+  border-color: #f2d7e4;
+}
+.language-editor {
+  font-size: 14px;
+  color: #4f4058;
+}
+.field-under,
+.field-under code {
+  font-size: 10px;
+  color: #75677d;
+}
+.with-prefix input {
+  font-size: 13px;
+  color: #4f4058;
+}
+.field-suffix {
+  font-size: 9px;
+  color: #75677d;
+}
+.field-help {
+  font-size: 10px;
+  color: #75677d;
+}
+select {
+  font-size: 12px;
+  color: #4f4058;
+}
+.reference-details summary {
+  font-size: 11px;
+  color: #75677d;
+}
+.reference-details summary > span {
+  font-size: 7px;
+  color: #75677d;
+}
+.reference-details > p {
+  font-size: 11px;
+  color: #75677d;
+}
+.json-editor {
+  font-size: 10px;
+  color: #75677d;
+}
+.upload-button,
+.reference-actions .text-link {
+  font-size: 10px;
+}
+.verify-button {
+  font-size: 12px;
+  min-height: 44px;
+}
+.input-guarantee {
+  font-size: 9px;
+  color: #75677d;
+}
+.action-help {
+  font-size: 11px;
+  color: #75677d;
+}
+.checkpoint-shortcut {
+  font-size: 10px;
+  color: #75677d;
+}
+.canvas-panel-head h2 {
+  font-size: 16px;
+}
+.canvas-panel-head .eyebrow {
+  font-size: 8px;
+  color: #75677d;
+}
+.badge {
+  font-size: 10px;
+}
+.canvas-panel-head .badge {
+  font-size: 10px;
+}
+.diagram-hint {
+  font-size: 9px;
+  color: #75677d;
+}
+.canvas-tools .icon-button {
+  color: #75677d;
+}
+.zoom-value {
+  font-size: 8px;
+  color: #75677d;
+}
+.canvas-legend {
+  font-size: 10px;
+  color: #75677d;
+}
+.legend-right {
+  color: #75677d;
+}
+.graph-state-label {
+  font-size: 21px;
+}
+.graph-edge-label {
+  font-size: 19px;
+}
+.graph-small-label {
+  font-size: 10px;
+  fill: #75677d;
+}
+.canvas-empty .badge {
+  font-size: 8px;
+}
+.canvas-empty h3,
+.failed-result h3,
+.visual-limit h3 {
+  color: #4f4058;
+  font-size: 19px;
+}
+.canvas-empty p,
+.failed-result > p,
+.visual-limit p {
+  color: #75677d;
+  font-size: 12px;
+}
+.empty-proof,
+.locked-note {
+  font-size: 10px;
+  color: #75677d;
+}
+.counterexample .eyebrow {
+  color: #906f7f;
+  font-size: 8px;
+}
+.counterexample code {
+  color: #a94f67;
+}
+.counterexample small {
+  font-size: 10px;
+  color: #956f7f;
+}
+.tape-label {
+  font-size: 8px;
+  color: #75677d;
+}
+.input-token {
+  font-size: 12px;
+  min-width: 28px;
+  height: 31px;
+  color: #75677d;
+}
+.step-count {
+  font-size: 11px;
+  color: #75677d;
+}
+.step-count > span {
+  color: #75677d;
+}
+.speed-select {
+  font-size: 11px;
+  color: #75677d;
+}
+.transport-row .icon-button {
+  color: #75677d;
+}
+.execution-explanation {
+  font-size: 11px;
+  color: #75677d;
+}
+.execution-explanation.completed {
+  color: #477b60;
+}
+.execution-explanation .badge {
+  font-size: 8px;
+}
+.state-tag {
+  font-size: 11px;
+}
+.state-tag.small {
+  font-size: 10px;
+}
+.source-line {
+  font-size: 9px;
+  color: #75677d;
+}
+.canvas-export-bar > span {
+  font-size: 9px;
+  color: #75677d;
+}
+.canvas-export-bar .button {
+  font-size: 11px;
+}
+.scope-note {
+  color: #75677d;
+}
+.scope-note p {
+  font-size: 11px;
+}
+.scope-note b {
+  color: #75677d;
+}
+.node-inspector {
+  font-size: 11px;
+  color: #75677d;
+}
+.evidence-tabs > button {
+  font-size: 11px;
+  color: #75677d;
+}
+.evidence-tabs > button.active {
+  color: #b6326a;
+  border-color: #d03676;
+}
+.evidence-download {
+  font-size: 10px;
+  color: #75677d;
+}
+.verification-summary h3 {
+  font-size: 14px;
+  color: #4f4058;
+}
+.verification-summary p {
+  font-size: 11px;
+  color: #75677d;
+}
+.verification-provenance {
+  font-size: 8px;
+  color: #75677d;
+}
+.verification-provenance b {
+  font-size: 10px;
+  color: #75677d;
+}
+.check-list > div {
+  font-size: 11px;
+  color: #75677d;
+}
+.check-list svg {
+  color: #3e8a63;
+}
+.check-index {
+  font-size: 8px;
+  color: #75677d;
+}
+.evidence-subhead p {
+  font-size: 12px;
+  color: #75677d;
+}
+.evidence-subhead select {
+  font-size: 11px;
+}
+th {
+  font-size: 9px;
+  color: #75677d;
+}
+.table-role {
+  font-size: 10px;
+  color: #75677d;
+}
+.table-scroll td {
+  color: #75677d;
+}
+.candidate-list b {
+  font-size: 10px;
+  color: #75677d;
+}
+.candidate-list small {
+  font-size: 10px;
+  color: #75677d;
+}
+.candidate-number {
+  font-size: 10px;
+  color: #75677d;
+}
+.candidate-list summary > .mono {
+  color: #75677d;
+  font-size: 9px;
+}
+.code-editor textarea {
+  font-size: 12px;
+  color: #75677d;
+}
+.line-numbers {
+  font-size: 12px;
+  color: #9a8c9f;
+}
+.syntax-help {
+  font-size: 10px;
+  color: #75677d;
+}
+.parser-note b {
+  font-size: 12px;
+  color: #8260a7;
+}
+.parser-note p {
+  font-size: 10px;
+  color: #8a78a5;
+}
+.tree-summary > div > span:last-child {
+  font-size: 10px;
+  color: #927fae;
+}
+.tree-summary .badge {
+  font-size: 9px;
+}
+.tree-summary select {
+  font-size: 10px;
+  color: #81669f;
+}
+.grammar-code {
+  font-size: 12px;
+  color: #75677d;
+}
+.grammar-evidence .eyebrow {
+  font-size: 9px;
+  color: #75677d;
+}
+.grammar-evidence > details summary {
+  font-size: 11px;
+  color: #75677d;
+}
+.parse-details span {
+  font-size: 9px;
+  color: #75677d;
+}
+.parse-details b {
+  color: #75677d;
+}
+.parse-details p {
+  font-size: 11px;
+  color: #75677d;
+}
+.filter-tabs button {
+  font-size: 12px;
+  color: #75677d;
+}
+.filter-tabs button.active {
+  color: #4f4058;
+}
+.search-input input {
+  font-size: 12px;
+  color: #75677d;
+}
+.example-number {
+  font-size: 8px;
+  color: #75677d;
+}
+.violet-visual .example-number {
+  color: #957cad;
+}
+.example-card-copy .badge {
+  font-size: 8px;
+}
+.example-card p {
+  font-size: 12px;
+  color: #75677d;
+}
+.example-attributes > span {
+  font-size: 9px;
+  color: #75677d;
+}
+.example-card-copy > button {
+  font-size: 12px;
+  color: #75677d;
+}
+.sample-machine > span {
+  color: #d03676;
+  border-color: #d03676;
+}
+.sample-machine > i {
+  color: #75677d;
+}
+.sample-grammar {
+  color: #8265a7;
+}
+.sample-grammar > span {
+  font-size: 13px;
+}
+.sample-grammar > small {
+  color: #9980b7;
+  font-size: 10px;
+}
+.library-note b {
+  font-size: 13px;
+  color: #75677d;
+}
+.library-note p {
+  font-size: 11px;
+  color: #75677d;
+}
+.library-note .text-link {
+  font-size: 11px;
+}
+.research-banner h2 {
+  color: #75677d;
+  font-size: 17px;
+}
+.research-banner p {
+  color: #75677d;
+  font-size: 12px;
+}
+.research-banner .badge {
+  font-size: 8px;
+}
+.measurement-panel .panel-heading h2,
+.architecture-panel h2,
+.experiments-panel h2 {
+  color: #4f4058;
+}
+.measurement-panel .eyebrow,
+.architecture-panel > .eyebrow,
+.experiments-panel .eyebrow {
+  font-size: 9px;
+  color: #75677d;
+}
+.measurement-panel .panel-heading .badge {
+  font-size: 8px;
+}
+.measurement-panel > .muted {
+  font-size: 11px;
+  color: #75677d;
+}
+.big-metric > b {
+  color: #d03676;
+}
+.big-metric > span {
+  font-size: 12px;
+  color: #75677d;
+}
+.big-metric small {
+  font-size: 10px;
+  color: #75677d;
+}
+.accuracy-bar > div {
+  background: #d03676;
+}
+.accuracy-bar small {
+  font-size: 9px;
+  color: #75677d;
+}
+.metric-pairs span {
+  font-size: 10px;
+  color: #75677d;
+}
+.metric-pairs b {
+  color: #75677d;
+  font-size: 17px;
+}
+.measurement-note {
+  font-size: 10px;
+  color: #75677d;
+}
+.structural-note {
+  color: #75677d;
+  font-size: 10px;
+}
+.structural-note b {
+  color: #75677d;
+}
+.structural-note small {
+  font-size: 9px;
+  color: #75677d;
+}
+.architecture-flow b {
+  font-size: 11px;
+  color: #75677d;
+}
+.architecture-flow small {
+  font-size: 10px;
+  color: #75677d;
+}
+.architecture-panel > .badge {
+  font-size: 9px;
+}
+.experiments-panel .muted {
+  color: #75677d;
+  font-size: 10px;
+}
+.experiments-panel th {
+  font-size: 8px;
+}
+.experiments-panel td {
+  font-size: 11px;
+}
+.experiments-panel td b {
+  color: #75677d;
+}
+.experiments-panel .badge {
+  font-size: 9px;
+}
+.table-footnote {
+  color: #75677d;
+  font-size: 10px;
+}
+.environment-panel .panel-heading h3,
+.smoke-panel .panel-heading h3 {
+  font-size: 13px;
+  color: #75677d;
+}
+.research-lower .badge {
+  font-size: 8px;
+}
+.environment-grid span {
+  font-size: 10px;
+  color: #75677d;
+}
+.environment-grid code {
+  color: #75677d;
+  font-size: 13px;
+}
+.environment-panel > p {
+  color: #75677d;
+  font-size: 10px;
+}
+.smoke-panel > p {
+  color: #75677d;
+  font-size: 11px;
+}
+.smoke-panel > div:not(.panel-heading) > span {
+  color: #6e9b84;
+  font-size: 9px;
+}
+.smoke-panel > small {
+  color: #75677d;
+  font-size: 10px;
+}
+.modal-heading .eyebrow {
+  font-size: 9px;
+  color: #75677d;
+}
+.modal-heading h2 {
+  color: #4f4058;
+}
+.settings-section h3 {
+  font-size: 14px;
+  color: #75677d;
+}
+.settings-section p {
+  font-size: 11px;
+  color: #75677d;
+}
+.standalone {
+  font-size: 12px;
+  color: #75677d;
+}
+.checkpoint-options b {
+  color: #75677d;
+  font-size: 10px;
+}
+.checkpoint-options small {
+  color: #75677d;
+  font-size: 9px;
+}
+.checkpoint-options .badge {
+  font-size: 8px;
+}
+.quality-options b {
+  color: #75677d;
+  font-size: 12px;
+}
+.quality-options code {
+  color: #75677d;
+  font-size: 10px;
+}
+.quality-options small {
+  color: #75677d;
+  font-size: 10px;
+}
+.settings-notice {
+  color: #75677d;
+  font-size: 11px;
+}
+.modal-footer > span {
+  color: #75677d;
+  font-size: 10px;
+}
+.modal-footer .button {
+  font-size: 12px;
+}
+.guide-intro > p {
+  font-size: 13px;
+  color: #75677d;
+}
+.guide-steps h3 {
+  font-size: 14px;
+  color: #75677d;
+}
+.guide-steps p {
+  font-size: 12px;
+  color: #75677d;
+}
+.guide-boundary {
+  color: #75677d;
+  font-size: 11px;
+}
+.guide-boundary b {
+  color: #75677d;
+}
+.video-meta {
+  color: #75677d;
+  font-size: 11px;
+}
+.video-source {
+  color: #75677d;
+  font-size: 11px;
+}
+.app-footer {
+  color: #75677d;
+  font-size: 10px;
+}
+@media (max-width: 1000px) and (min-width: 641px) {
+  .studio-layout {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+  .canvas-panel-head .badge {
+    font-size: 8px;
+  }
+  .canvas-panel-head h2 {
+    font-size: 13px;
+  }
+  .canvas-export-bar .button {
+    font-size: 10px;
+  }
+  .canvas-legend {
+    font-size: 9px;
+  }
+  .canvas-export-bar > span {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .topbar-help {
+    font-size: 12px;
+  }
+  .page-actions .button {
+    font-size: 0;
+  }
+  .section-heading .text-link {
+    font-size: 0;
+  }
+  .overview-principles b {
+    font-size: 10px;
+  }
+  .overview-principles small {
+    font-size: 9px;
+  }
+  .canvas-panel-head .badge {
+    font-size: 8px;
+  }
+  .canvas-legend {
+    font-size: 9px;
+  }
+  .legend-right {
+    display: none;
+  }
+  .canvas-export-bar > span {
+    font-size: 8px;
+  }
+  .graph-state-label {
+    font-size: 23px;
+  }
+  .graph-edge-label {
+    font-size: 21px;
+  }
+  .evidence-tabs > button {
+    font-size: 10px;
+  }
+  .evidence-download span {
+    display: none;
+  }
+  .quality-options > button {
+    padding-left: 31px;
+  }
+  .quality-options b {
+    font-size: 11px;
+  }
+  .quality-options small {
+    font-size: 9px;
+  }
+}
+.diagram-compact {
+  background: transparent;
+  width: 100%;
+}
+.diagram-compact .graph-svg {
+  height: 128px;
+  pointer-events: none;
+}
+.example-card-visual:has(.diagram-compact) {
+  height: 180px;
+  padding-top: 30px;
+}
+.diagram-compact .graph-state-label {
+  font-size: 25px;
+}
+.diagram-compact .graph-edge-label {
+  font-size: 21px;
+}
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 240px;
+  padding: 12px 18px;
+  background: white;
+  color: #d03676;
+  border: 1px solid #d03676;
+  z-index: 150;
+  transform: translateY(-150%);
+  border-radius: 6px;
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+@media (max-width: 900px) {
+  .skip-link {
+    left: 16px;
+    max-width: calc(100vw - 32px);
+  }
+}

@@ -1,0 +1,13 @@
+variant,backbone,initialisation,seed,status,equivalence_accuracy,training_seconds
+vanilla,bert-base-uncased,original,13,not run,,
+vanilla,bert-base-uncased,original,42,not run,,
+vanilla,bert-base-uncased,original,123,not run,,
+theorybert,bert-base-uncased,random,13,not run,,
+theorybert,bert-base-uncased,random,42,not run,,
+theorybert,bert-base-uncased,random,123,not run,,
+theorybert,bert-base-uncased,subword_mean,13,not run,,
+theorybert,bert-base-uncased,subword_mean,42,not run,,
+theorybert,bert-base-uncased,subword_mean,123,not run,,
+theorybert,bert-base-uncased,subword_mean_plus_one,13,not run,,
+theorybert,bert-base-uncased,subword_mean_plus_one,42,not run,,
+theorybert,bert-base-uncased,subword_mean_plus_one,123,not run,,

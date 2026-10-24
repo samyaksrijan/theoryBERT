@@ -1,0 +1,17 @@
+:root {
+  --paper: #fbfafc;
+  --ink: #0d0c22;
+  --navy: #0d0c22;
+  --accent: #d03676;
+  --pink: #e84b89;
+  --accent-soft: #fdf0f6;
+  --green: #3b8a64;
+  --green-soft: #f1f8f4;
+  --muted: #79717f;
+  --line: #e9e6ec;
+  --sidebar: 226px;
+  --heading: "DM Sans Variable", sans-serif;
+  --body: "DM Sans Variable", sans-serif;
+  --mono: "IBM Plex Mono", monospace;
+  --serif: "Instrument Serif", Georgia, serif;
+}

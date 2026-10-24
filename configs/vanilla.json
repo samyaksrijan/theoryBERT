@@ -1,0 +1,32 @@
+{
+  "variant": "vanilla",
+  "backbone": "bert-base-uncased",
+  "initialisation": "subword_mean",
+  "dataset": "data/examples/sample.jsonl",
+  "output": "artifacts/vanilla",
+  "seed": 42,
+  "max_states": 8,
+  "max_length": 96,
+  "batch_size": 2,
+  "epochs": 3,
+  "gradient_accumulation": 4,
+  "learning_rate": 0.0003,
+  "device": "auto",
+  "loss_weights": {
+    "count": 1.0,
+    "accept": 1.0,
+    "transition": 1.0
+  },
+  "domain_tokens": [
+    "\u03b4",
+    "\u03a3",
+    "\u03b5",
+    "q0",
+    "q1",
+    "q2",
+    "DFA",
+    "CFG",
+    "\u2192",
+    "\u2261"
+  ]
+}

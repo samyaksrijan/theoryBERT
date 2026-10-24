@@ -1,0 +1,8 @@
+{
+  "variant": "theorybert", "backbone": "bert-base-uncased", "initialisation": "subword_mean",
+  "dataset": "data/examples/sample.jsonl", "output": "artifacts/theorybert", "seed": 42,
+  "max_states": 8, "max_length": 96, "batch_size": 2, "epochs": 3,
+  "gradient_accumulation": 4, "learning_rate": 0.0003, "device": "auto",
+  "loss_weights": {"count": 1.0, "accept": 1.0, "transition": 1.0},
+  "domain_tokens": ["δ", "Σ", "ε", "q0", "q1", "q2", "DFA", "CFG", "→", "≡"]
+}
