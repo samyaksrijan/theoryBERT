@@ -16,3 +16,5 @@ services:
         value: "1"
       - key: THEORYBERT_MAX_JOBS
         value: "2"
+      - key: THEORYBERT_PARSE_TIMEOUT
+        value: "45"

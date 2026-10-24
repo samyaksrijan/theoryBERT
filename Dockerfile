@@ -36,5 +36,6 @@ RUN useradd --create-home --uid 10001 theorybert \
     && mkdir -p /app/artifacts/videos \
     && chown -R theorybert:theorybert /app
 USER theorybert
+ENV THEORYBERT_PARSE_TIMEOUT=45
 EXPOSE 10000
 CMD ["python", "-m", "theorybert.web", "--host", "0.0.0.0"]

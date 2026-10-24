@@ -192,7 +192,12 @@ def solve_cfg(data, phase):
     grammar, text = data.get("grammar", ""), data.get("input", "")
     limit = int(data.get("limit", 5))
     phase("parsing")
-    spec, trees, truncated = parse(grammar, text.split(), limit)
+    spec, trees, truncated = parse(
+        grammar,
+        text.split(),
+        limit,
+        timeout=min(60, max(1, float(os.environ.get("THEORYBERT_PARSE_TIMEOUT", "8")))),
+    )
     phase("verifying")
     displays, steps, errors = [], [], []
     for tree in trees:
