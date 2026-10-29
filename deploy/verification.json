@@ -1,0 +1,45 @@
+{
+  "source_commit": "9c00d5d3e8e3e33c81d63f7d1907a07ab3feebba",
+  "ci_url": "https://github.com/samyaksrijan/theoryBERT/actions/runs/40822741071",
+  "memory_limit_mib": 512,
+  "swap_limit_mib": 0,
+  "post_check_memory_mib": 331.2,
+  "measurement_note": "Docker stats after all checks, not peak usage. Same application source; final report revision is separate.",
+  "model_bundle": "bert-plan-2026-10-29",
+  "model_precision": "Original evaluated FP32, memory mapped on CPU",
+  "passed": true,
+  "checks": [
+    {
+      "case": "BERT suffix with five states",
+      "passed": true,
+      "seconds": 0.07746697500002142
+    },
+    {
+      "case": "DFA rejection follows changed input",
+      "passed": true
+    },
+    {
+      "case": "Unreferenced English never claims equivalence",
+      "passed": true
+    },
+    {
+      "case": "BERT grammar and checked derivation",
+      "passed": true,
+      "seconds": 1.2280173209999816
+    },
+    {
+      "case": "BERT compiler grammar and checked AST",
+      "passed": true,
+      "seconds": 1.248321156000003
+    },
+    {
+      "case": "Invalid compiler expression rejected",
+      "passed": true
+    },
+    {
+      "case": "Verified animation exports as real MP4",
+      "passed": true,
+      "seconds": 2.8006104600000015
+    }
+  ]
+}

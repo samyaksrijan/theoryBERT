@@ -109,15 +109,15 @@ def draw_blocks(c,blocks,x,top,width,height,style=BODY):
 
 
 def build():
-    from report_content import ieee_pages,long_pages
+    from final_solution import ieee_pages,long_pages
     OUT.mkdir(parents=True,exist_ok=True)
     paper=OUT/'TheoryBERT_IEEE_8_Pages.pdf'
     def title_page(c,doc):
-        title=para('TheoryBERT: BERT Language Analysis with<br/>Verified Formal Representations',ParagraphStyle('Title',fontName='TimesProject',fontSize=23,leading=26,alignment=TA_CENTER))
+        title=para('TheoryBERT: Translating and Understanding<br/>Formal Languages with BERT',ParagraphStyle('Title',fontName='TimesProject',fontSize=23,leading=26,alignment=TA_CENTER))
         _,th=title.wrap(522,70);title.drawOn(c,45,738-th)
     def make_frames(height):
         return [Frame(45+col*270,72,252,height,leftPadding=0,rightPadding=0,topPadding=0,bottomPadding=0,id=f'column{col}') for col in range(2)]
-    doc=BaseDocTemplate(str(paper),pagesize=(612,792),title='TheoryBERT: BERT Language Analysis with Verified Formal Representations',author='TheoryBERT Project',pageCompression=1)
+    doc=BaseDocTemplate(str(paper),pagesize=(612,792),title='TheoryBERT: Translating and Understanding Formal Languages with BERT',author='TheoryBERT Project',pageCompression=1)
     doc.addPageTemplates([PageTemplate(id='first',frames=make_frames(592),onPage=title_page,autoNextPageTemplate='body'),PageTemplate(id='body',frames=make_frames(666))])
     story=[]
     skip=0
@@ -168,7 +168,7 @@ def build():
         spare=draw_blocks(c,[('h',title)]+blocks,52,777,491,700,LONG)
         c.setStrokeColor(colors.HexColor('#b7c0ca'));c.line(52,45,543,45)
         c.setFont('TimesProject',9);c.setFillColor(NAVY)
-        c.drawString(52,30,'Local research snapshot - 29 October 2026')
+        c.drawString(52,30,'Final technical solution - 29 October 2026')
         c.drawRightString(543,30,str(index+1))
         print(f'Report page {index+1}: {spare:.1f} pt spare')
         c.showPage()
