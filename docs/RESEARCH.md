@@ -1,5 +1,9 @@
 # Research protocol and limits
 
+The latest active DFA condition is the [BERT semantic-plan experiment](SEMANTIC-PLAN.md). It reuses the evaluated V3 encoder without updates and trains a small typed-program head with learned literal pointers. Formal constructors compile the predicted plan; they do not interpret English. The direct-head and original adaptation protocols below remain historical, separately measured conditions. New comparison results, limits and the unchanged visualization hashes are documented in the experiment note.
+
+The dedicated [local BERT workflow](LOCAL-BERT.md) is a new experimental condition: the top two pretrained encoder blocks are fine-tuned, lower blocks and added embeddings are frozen, and direct DFA heads are trained on an expanded, separately manifested dataset. The original frozen-backbone adaptation protocol below still describes the older vanilla/adapted configurations; the local run must not be presented as that controlled comparison. Local measurements live in `artifacts/local-bert-evaluation/`.
+
 ## What is predicted
 
 BERT is an encoder, so it is followed by explicit structured heads. Binary input alphabet `{0,1}`, maximum eight states, and canonical start state `q0` define the first output space. A pooled contextual representation yields:

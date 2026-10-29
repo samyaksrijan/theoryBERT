@@ -108,3 +108,18 @@ def test_empty_candidate_stream_is_an_explicit_failure():
     assert result.candidate is None and result.verified is None
     assert result.reports[0].status == Status.RESOURCE_LIMIT
     assert result.reports[0].message
+
+
+def test_unverified_preview_keeps_first_ranked_valid_prediction():
+    first, alternative = pattern_dfa("01"), pattern_dfa("10")
+    consumed = []
+    def predictions():
+        consumed.append("first")
+        yield first
+        consumed.append("alternative")
+        yield alternative
+    result = run_candidates(predictions(), reference=None, budget=5)
+    assert result.candidate.to_dict() == first.to_dict()
+    assert consumed == ["first"]
+    assert result.verified is None
+    assert len(result.reports) == 1

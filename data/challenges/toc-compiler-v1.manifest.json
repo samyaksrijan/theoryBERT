@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "examples": 165,
+  "by_mode": {
+    "dfa": 100,
+    "cfg": 38,
+    "compiler": 27
+  },
+  "partitions": {
+    "test": 48,
+    "development": 71,
+    "validation": 46
+  },
+  "sha256": "ff33ccb8b859220015a605d404f75be78cfc7ca21075557805c0c375ad4bf73b",
+  "independent_gold_membership_checks": 51100,
+  "policy": "Frozen before prediction. Inspect development/validation first; test is reserved for the selected final model. Previously protected language splits remain protected. Fresh wording can target previously trained languages and is labeled explicitly."
+}

@@ -129,6 +129,7 @@ with advanced:
         st.markdown("**Model & research configuration**")
         checkpoint = st.text_input(
             "Local checkpoint directory",
+            value=json.loads(Path("artifacts/active-model.json").read_text())["checkpoint"] if Path("artifacts/active-model.json").is_file() else "",
             placeholder="artifacts/theorybert/best",
             key="checkpoint",
         )
@@ -218,9 +219,8 @@ with left:
             source = st.selectbox(
                 "Prediction source",
                 [
-                    "Reference demonstration",
                     "TheoryBERT checkpoint",
-                    "Rule-based baseline",
+                    "Reference demonstration",
                     "Incorrect candidate fixture",
                 ],
                 key="dfa_source",

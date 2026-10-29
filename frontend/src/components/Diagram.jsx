@@ -50,6 +50,8 @@ export default function Diagram({
   selected,
   className = "",
   compact = false,
+  verified = true,
+  treeKind = "parse",
 }) {
   const uid = useId().replaceAll(":", "");
   const [zoom, setZoom] = useState(1);
@@ -119,7 +121,7 @@ export default function Diagram({
         ]
       : [],
   );
-  const currentProduction = treeStep > 0 ? steps[treeStep - 1]?.node_id : null;
+  const currentProduction = treeKind !== "ast" && treeStep > 0 ? steps[treeStep - 1]?.node_id : null;
   const reset = () => {
     setZoom(1);
     setPan([0, 0]);
@@ -201,8 +203,8 @@ export default function Diagram({
           compact
             ? "Reference automaton preview; double rings indicate accepting states."
             : isTree
-              ? "Verified parse tree; purple leaves are terminals. Select a node to inspect its production."
-              : `Verified automaton. Active state ${active}. Double rings mark accepting states.`
+              ? treeKind === "ast" ? "Abstract syntax tree; operators connect to their operands." : "Verified parse tree; purple leaves are terminals. Select a node to inspect its production."
+              : `${verified ? "Verified automaton" : "Structurally checked automaton; language equivalence unverified"}. ${dfa?.states.length} states. Active state ${active}. Double rings mark accepting states.`
         }
         onPointerDown={(e) => {
           if (e.target.closest("[data-node]")) return;
@@ -274,6 +276,7 @@ export default function Diagram({
             const labelText = e.symbols.join(", ");
             return (
               <g key={i}>
+                <title>{`${e.source} → ${e.target} on ${e.symbols.join(", ")}`}</title>
                 <path
                   d={path}
                   fill="none"
@@ -366,6 +369,7 @@ export default function Diagram({
                   y={y + 6}
                   textAnchor="middle"
                   className="graph-state-label"
+                  style={{ fontSize: Math.min(18, 48 / Math.max(1, state.length * 0.6)) }}
                   fill={isActive ? "#fff" : "#30273a"}
                 >
                   {state}
@@ -421,7 +425,7 @@ export default function Diagram({
                 role="button"
                 tabIndex="0"
                 data-node="true"
-                aria-label={`${node.symbol}, ${node.terminal ? "terminal" : "nonterminal"}, node ${id}. Inspect node.`}
+                aria-label={`${node.symbol}, ${treeKind === "ast" ? node.terminal ? "operand" : "operator" : node.terminal ? "terminal" : "nonterminal"}, node ${id}. Inspect node.`}
                 onClick={(e) => choose(e, id)}
                 onKeyDown={(e) => {
                   if (["Enter", " "].includes(e.key)) {
@@ -464,6 +468,7 @@ export default function Diagram({
                 >
                   {node.symbol}
                 </text>
+                {!node.terminal && node.children.length === 0 && <text x={x} y={y+38} textAnchor="middle" className="graph-small-label" opacity={shown ? 1 : 0.35}>ε</text>}
                 {selected === id && (
                   <text
                     x={x}
@@ -483,10 +488,10 @@ export default function Diagram({
           {isTree ? (
             <>
               <span>
-                <i className="legend-terminal" /> Terminal
+                <i className="legend-terminal" /> {treeKind === "ast" ? "Operand" : "Terminal"}
               </span>
               <span>
-                <i className="legend-nonterminal" /> Nonterminal
+                <i className="legend-nonterminal" /> {treeKind === "ast" ? "Operator" : "Nonterminal"}
               </span>
               <span className="legend-right">Select a node to inspect</span>
             </>

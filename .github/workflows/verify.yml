@@ -1,0 +1,55 @@
+name: Verify TheoryBERT
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      model_container:
+        description: Build and exercise the actual FP32 model at the free Render memory limit
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: sudo apt-get update && sudo apt-get install -y libcairo2-dev libpango1.0-dev pkg-config ffmpeg
+      - run: pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install -r requirements-web.txt -r requirements-bert.txt pytest && pip install --no-deps -e .
+      - run: pytest -q
+      - run: npm ci --no-audit --no-fund && npm run build
+        working-directory: frontend
+  model-container:
+    if: github.event_name == 'workflow_dispatch' && inputs.model_container
+    needs: tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --build-arg THEORYBERT_RUNTIME=bert -t theorybert:verify .
+      - run: |
+          docker run -d --name theorybert --memory=512m --memory-swap=512m -p 10000:10000 -e RENDER_GIT_COMMIT=${{ github.sha }} theorybert:verify
+          python scripts/check_deployment.py --base-url http://127.0.0.1:10000 --expect-commit ${{ github.sha }} --output deployment-check.json
+        timeout-minutes: 12
+      - if: always()
+        run: |
+          docker logs theorybert > container.log 2>&1 || true
+          docker inspect theorybert > container-state.json || true
+          docker stats --no-stream theorybert > container-memory.txt || true
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-evidence
+          path: |
+            deployment-check.json
+            container.log
+            container-state.json
+            container-memory.txt

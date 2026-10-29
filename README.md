@@ -2,6 +2,12 @@
 
 A local research prototype for **English → adapted BERT → structured DFA → independent formal verification → Manim animation**, with a second mode for verified CFG parse trees.
 
+The input-dependent engine adds automatic test-word simulation, grammar-aware tokenization, FIRST/FOLLOW and LL(1) analysis, an arithmetic compiler with AST and checked three-address code, and a separately trained BERT grammar-production decoder for English-to-CFG requests. BERT interprets natural language; formal algorithms check, execute and render its outputs. No handwritten English compiler or symbolic repair replaces a failed neural prediction. See [the implementation and research notes](docs/INPUT-DEPENDENT-ENGINE.md).
+
+The next-stage [fresh challenge audit](docs/FRESH-CHALLENGE.md) tests unfamiliar wording and combined conditions. It records the large gap from generated-template scores, the retained DFA checkpoint, the promoted grammar decoder, and the remaining limitations rather than substituting constructed answers.
+
+The local learned engine now has a dedicated workflow: pinned `google-bert/bert-base-uncased` weights, audited KB13 regex-to-DFA conversion plus generated English/DFA supervision, fine-tuning of the top two pretrained BERT blocks and direct DFA heads, and exact held-out equivalence evaluation. See [the local BERT guide](docs/LOCAL-BERT.md). There is no rule fallback in learned mode. Model weights stay out of Git history. The evaluated inference assets are published as a versioned GitHub Release bundle, pinned by SHA-256 in `deploy/model-bundle.json`.
+
 The main product is a **React application** with a public landing page, DFA Studio, Grammar Lab, Example Library and Research pages. The landing follows the supplied visual reference: a white canvas, horizontal navigation, bold black/pink typography, a diagonal animated showcase, and a searchable gallery of real worked examples. Its mode switch and gallery open the relevant studio with the selected example loaded. The studios, library, research page and settings share the same white/near-black/pink identity, self-hosted DM Sans typography and a stacked Poppins wordmark (BERT above THEORY). On a fresh landing-page load, the outlined logo writes itself on white and fades into the page; normal navigation and direct studio access remain immediate. Interactive SVG canvases retain their playback, zoom, pan, node inspection and fullscreen controls; their state palette matches tables and Manim exports. A local Starlette API connects it to the existing Python research engine and real Manim exports. No service, API key or trained checkpoint is needed for CFG parsing or labelled reference demonstrations. The earlier Streamlit app is retained as an optional legacy interface.
 
 ## Start here
@@ -13,7 +19,7 @@ source .venv/bin/activate
 python scripts/run_local.py
 ```
 
-Open **http://localhost:8501**. The launcher builds the frontend and serves the product and API together on loopback. In **DFA Studio**, select **Ends in 01**, keep **Reference demonstration**, then **Build & verify**. Use the canvas play/step controls or **Export animation** for an MP4. This source is explicitly a reference demonstration, not learned inference. Try `1101` (ACCEPT) and `00` (REJECT); both are valid executions of a verified machine.
+Open **http://localhost:8501**. The launcher builds the frontend and serves the product and API together on loopback. DFA Studio defaults to **BERT model**, using the evaluated checkpoint recorded in `artifacts/active-model.json`. Enter an English language description and a binary test string, then **Build & verify**. BERT directly predicts the machine; without an independent reference, semantic equivalence remains unverified. Example chips include independent references, and successful equivalence checks unlock MP4 export. Changing only the test word updates the trace without another BERT forward pass. Grammar Lab defaults to a trained BERT production decoder for English-to-CFG generation; its exact parser checks the selected derivation, not equivalence to arbitrary English. Explicit formal inputs and reference demonstrations remain labeled separately.
 
 The frontend requires Node.js 22.12+ (tested: Node 25.6.1, npm 11.9.0). The first launch uses `npm ci`; later launches reuse installed dependencies. Use `python scripts/run_local.py --skip-build` for an unchanged existing build, or `--port 8502` for another port. Model/checkpoint, candidate budget, tree limit and export quality live in **Workspace settings**. Independent reference JSON can be pasted or uploaded directly in DFA Studio.
 
@@ -41,7 +47,7 @@ All scenes use `Text`; LaTeX is unnecessary. Exported animations use the include
 
 Minimisation does **not** prove that a DFA matches English. Exact equivalence needs a second, independently grounded formal reference. For generated benchmarks this is the separately stored ground truth. For live requests, upload or paste an independent reference in DFA Studio; [reference-suffix-01.json](data/examples/reference-suffix-01.json) shows the schema.
 
-Without a reference the model may predict and display its transition table, but the result is **REFERENCE_UNAVAILABLE** and DFA rendering stays disabled. Other outcomes are **STRUCTURE_INVALID**, **EQUIVALENCE_FAILED**, **VERIFIED**, **RESOURCE_LIMIT** and **INTERNAL_ERROR**. Only VERIFIED can create a renderable DFA object. The renderer rechecks the sealed candidate/reference pair, creates a trace, and consumes that trace. A verified machine rejecting a string is not a verification failure.
+Without a reference the model may predict, display its diagram and transition table, and simulate a string, but the result is **REFERENCE_UNAVAILABLE**: structure is checked, language equivalence is unverified, and verified video export stays disabled. Other outcomes are **STRUCTURE_INVALID**, **EQUIVALENCE_FAILED**, **VERIFIED**, **RESOURCE_LIMIT** and **INTERNAL_ERROR**. Only VERIFIED can create a sealed object for video export. The renderer rechecks the sealed candidate/reference pair, creates a trace, and consumes that trace. A verified machine rejecting a string is not a verification failure.
 
 The demonstration source intentionally loads a known reference, identifies that fact, and demonstrates execution. It is excluded from learned accuracy claims. The incorrect fixture complements accepting states of the selected reference; this necessarily changes empty-string membership. Its real shortest counterexample is displayed and rendering is blocked. The model and retry decoder never receive reference transitions or counterexamples.
 
@@ -51,7 +57,7 @@ CFG mode verifies one **derivation**, not equivalence between arbitrary grammars
 S -> 'a' S 'b' |
 ```
 
-Blank input is the empty string. Arithmetic requires `id + id * id`, including spaces around punctuation. Multiple trees can be selected; bounded enumeration never proves unambiguity. Parsing has an eight-second subprocess budget, 64-token and 200-production limits. Trees above 45 nodes, 12 leaves or ten levels cannot render, with an actionable message.
+Blank input is the empty string. Grammar-terminal tokenization handles `aabb` or `id+id*id` directly; whitespace tokenization remains available for explicit boundaries. The **Arithmetic compiler** preset handles real identifier/number lexemes, shows an AST, and generates checked three-address code. The **Compiler analysis** tab computes nullable symbols, FIRST/FOLLOW sets and predictive-table conflicts for the supplied grammar. Multiple trees can be selected; bounded enumeration never proves unambiguity. Parsing has an eight-second subprocess budget, 64-token and 200-production limits. Trees above 45 nodes, 12 leaves or ten levels cannot render, with an actionable message.
 
 ## Data, training and evaluation commands
 
@@ -106,7 +112,7 @@ python scripts/validate_rendering.py
 
 Configurations are JSON under [configs](configs). Adjust `dataset`, `output`, state bound, sequence length, batch size, accumulation, epochs, learning rate, device and component loss weights. Defaults are deliberately conservative, not a guarantee of fitting every 8 GB GPU. Mixed precision is disabled; CPU, CUDA and Apple MPS are detected. DistilBERT is a separate configuration, never merged into BERT comparison rows.
 
-The smoke run saves `artifacts/smoke/best` and `last`, with explicit **tiny random backbone** metadata. This checkpoint exercises the architecture but is not trained BERT research evidence. No genuine trained pretrained-backbone checkpoint ships with this project.
+The smoke run saves `artifacts/smoke/best` and `last`, with explicit **tiny random backbone** metadata. This checkpoint exercises the architecture but is not trained BERT research evidence. The genuine pilot is preserved at `artifacts/local-bert/best`; the expanded active engine and resumable state are at `artifacts/bert-engine/best` and `last`. Activation requires separate held-out evaluation. Weights are not committed to Git.
 
 Training persists tokenizer, backbone configuration, DFA schema version, model/optimizer state, CSV component losses, validation equivalence/loss and embedding audits. Best selection maximises validation equivalence, breaking ties by validation loss. The test split is not used for selection. Resuming restores optimiser and epoch state. No training runs from a Streamlit rerun.
 
@@ -119,13 +125,13 @@ See [docs/RESEARCH.md](docs/RESEARCH.md) for architecture, initialisation defini
 - Rule-based baseline: explicitly restricted patterns and honest unsupported results.
 - Optional prompted LLM adapter: disabled by default; requires an explicitly supplied generation callable. No networking or paid calls happen automatically.
 
-Larger pretrained training, fair vanilla/adapted comparisons, initialisation ablations and multi-seed research results are **not run**. The ≥70% language-equivalence figure remains a research target. The UI does not invent measurements.
+The local pretrained fine-tuning run is recorded separately from fair vanilla/adapted comparisons, initialisation ablations and multi-seed research experiments, which remain **not run**. The Research page reads the activated model's actual evaluation files and never substitutes verified-release precision for model accuracy.
 
 ## Demonstration and validation
 
 1. **Correct:** reference demo `Ends in 01`, `1101`, build and verify, then play or export; change to `00` and verify/play the REJECT execution. Once genuinely trained, choose **Learned checkpoint** and set its path in Workspace settings to demonstrate learned inference against the benchmark reference.
 2. **Incorrect:** select **Incorrect candidate fixture**, verify, inspect `ε` as a shortest counterexample and the disabled render control. This is a deliberate fixture, not a model failure.
-3. **Comparison:** inspect `artifacts/evaluation/report.md` for the measured limited rule-based baseline. Pretrained vanilla/adapted experiments are not run. `artifacts/ablations/runs.csv` records that explicitly.
+3. **Comparison:** inspect `artifacts/bert-engine-evaluation/report.md` for the active learned engine, `artifacts/local-bert-evaluation/report.md` for the pilot, and `artifacts/evaluation/report.md` for the historical limited rule baseline. These use different datasets and are not a controlled comparison. Matched vanilla/adapted experiments remain unrun.
 
 The [prompt audit](docs/COMPLETION.md) maps the requirements to implementation and lists the remaining opt-in experiments. The tested environment, actual validations, screenshots and remaining limits are documented in [docs/VALIDATION.md](docs/VALIDATION.md). Generated videos, datasets, checkpoints and screenshots live under ignored `artifacts/` or `data/generated/`. Source, small examples and configurations are retained.
 
@@ -155,6 +161,14 @@ The original Streamlit interface remains available with `streamlit run app.py --
 
 The repository includes a multi-stage `Dockerfile` and `render.yaml`. Render builds the React frontend, installs Cairo/Pango/ffmpeg, then serves the frontend and Python API together with a single Uvicorn process bound to `0.0.0.0:$PORT`. The health endpoint is `/api/health`.
 
-The free hosted demo installs `requirements-web.txt`, which supports reference demonstrations, the rule baseline, independent DFA/CFG verification, interactive canvases and real Manim video exports. It does not install PyTorch/Transformers or include a trained checkpoint. Research training and learned-checkpoint use remain available in the full local installation. Small recorded validation reports in `data/research/` describe the executed local runs, not Render hardware. The hosted parser has a 45-second wall-clock budget to include Python/NLTK worker startup on the free CPU; local parsing retains its eight-second default, and grammar/token/tree limits stay in effect.
+The default Docker build installs CPU PyTorch and Transformers plus a hash-checked release bundle containing the evaluated FP32 BERT encoder, semantic plan head and grammar head. BERT interprets English; formal compilation, equivalence checking and derivation checking establish the displayed mathematical properties. CPU memory-mapped loading retains every weight byte and precision, while sharing the encoder between heads. Startup fails if either active checkpoint cannot load. `/api/health` reports model readiness and the deployed Render commit. `--build-arg THEORYBERT_RUNTIME=demo` is an explicit reference-only image, with no neural inference. Small recorded validation reports in `data/research/` describe the executed local runs, not Render hardware. The hosted parser has a 45-second wall-clock budget to include Python/NLTK worker startup on the free CPU; local parsing retains its eight-second default, and grammar/token/tree limits stay in effect.
 
 Use one application process: verified result handles are kept in process memory. The free configuration runs one background task at a time, with a second queued request allowed. Browser inputs and session snapshots persist in browser storage. Render's free filesystem is ephemeral: cached videos and server verification handles disappear on restart; verify and export again when needed. Free services also sleep after inactivity and may take a moment to wake up. See [Render Docker deployment](https://render.com/docs/docker) and [free service limits](https://render.com/docs/free).
+
+## Latest local DFA approach
+
+The active model is now a [BERT semantic-plan decoder](docs/SEMANTIC-PLAN.md) with learned literal copying and exact DFA construction. The final graph and playback presentation are unchanged. First-candidate equivalence improves from 87.68% to 95.32% on the 641-case regression set and from 7.02% to 66.67% on the 57-case matched fresh test. This is a single-seed generated comparison; suffix wording remains a documented weakness. Inference is slightly slower, while the trainable head is much smaller. Full results and resource details are in the linked experiment note.
+
+The eight-page IEEE-style manuscript and comprehensive report are generated under `output/pdf/` from `docs/reports/`. They include source links, data lineage, architecture, measured comparisons and limitations.
+
+The GitHub verification workflow runs the unit suite and frontend build. Its optional model-container job builds the actual release bundle and exercises BERT DFA, grammar, compiler, invalid-input rejection and MP4 export in a Docker container limited to 512 MB. Deployment readiness is measured by this job, not inferred from model size. The technical reports and dataset provenance archive are in `output/pdf/`.

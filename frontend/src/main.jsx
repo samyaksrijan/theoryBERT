@@ -14,6 +14,7 @@ import "./readability.css";
 import "./workspace-theme.css";
 import "./landing.css";
 import "./brand.css";
+import "./analysis.css";
 
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>

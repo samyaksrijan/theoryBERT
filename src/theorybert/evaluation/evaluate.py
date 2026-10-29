@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+import hashlib
 import json
 import time
 from pathlib import Path
@@ -9,7 +10,7 @@ from theorybert.contracts import DFA
 from theorybert.formal.dfa import canonicalise, equivalent, validate
 from theorybert.pipeline import run_candidates
 from theorybert.baselines.predictors import RuleBased, Learned
-from theorybert.models.theorybert import load_checkpoint
+from theorybert.models.predictor import load_predictor
 
 
 def fertility(tokenizer, texts):
@@ -67,6 +68,8 @@ def evaluate(predictor, records, budget=5, tokenizer=None, render_videos=False):
             {
                 "example_id": record["example_id"],
                 "language_id": record["language_id"],
+                "family": record.get("family", "unspecified"),
+                "reference_states": len(canonicalise(reference).states),
                 "category": record["metadata"]["category"],
                 "notation": record["metadata"].get("notation", "unknown"),
                 "source": predictor.source,
@@ -146,6 +149,14 @@ def write_results(rows, output):
         )
         summary[category] = metrics
     (output / "summary.json").write_text(json.dumps(summary, indent=2))
+    breakdown = {}
+    for field in ("family", "reference_states", "language_id"):
+        grouped = {}
+        for row in rows:
+            grouped.setdefault(str(row[field]), []).append(row)
+        breakdown[field] = {key: {"examples": len(values), "first_candidate_equivalence": sum(r["raw_equivalence"] for r in values)/len(values), "success_within_budget": sum(r["released"] for r in values)/len(values)} for key, values in sorted(grouped.items())}
+    breakdown["macro_language_equivalence"] = sum(r["first_candidate_equivalence"] for r in breakdown["language_id"].values()) / len(breakdown["language_id"])
+    (output / "breakdown.json").write_text(json.dumps(breakdown, indent=2))
     strata = {}
     for notation in ("plain", "mixed", "notation-heavy"):
         subset = [r for r in rows if r["notation"] == notation]
@@ -179,6 +190,8 @@ def write_results(rows, output):
 
 
 def main():
+    import torch
+    torch.set_num_threads(2)
     p = argparse.ArgumentParser()
     p.add_argument("--dataset", default="data/examples/sample.jsonl")
     p.add_argument("--checkpoint")
@@ -189,8 +202,8 @@ def main():
     a = p.parse_args()
     tokenizer = None
     if a.checkpoint:
-        model, tokenizer, config = load_checkpoint(a.checkpoint)
-        predictor = Learned(model, tokenizer, config)
+        predictor = load_predictor(a.checkpoint)
+        tokenizer = predictor.tokenizer
     else:
         predictor = RuleBased()
     records = [
@@ -200,9 +213,14 @@ def main():
     rows = evaluate(predictor, records, a.budget, tokenizer, a.render)
     write_results(rows, a.output)
     metadata = {
+        "dataset": a.dataset,
+        "dataset_sha256": hashlib.sha256(Path(a.dataset).read_bytes()).hexdigest(),
+        "split": a.split,
+        "examples": len(records),
+        "candidate_budget": a.budget,
         "checkpoint": a.checkpoint,
         "source": predictor.source,
-        "trainable_parameters": sum(
+        "trainable_parameters": getattr(predictor, "trainable_parameters", None) or sum(
             p.numel() for p in predictor.model.parameters() if p.requires_grad
         )
         if hasattr(predictor, "model")

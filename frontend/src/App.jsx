@@ -59,16 +59,21 @@ import { Wordmark } from "./components/Brand";
 const initialDfa = {
   description: "Binary strings that end in 01.",
   input: "1101",
-  source: "demo",
+  source: "learned",
   example_id: "manual-suffix-01",
   reference_json: "",
+  candidate_json: "",
+  machineSignature: null,
   result: null,
   signature: null,
   video: null,
 };
 const initialCfg = {
+  grammarSource: "learned",
+  description: "Arithmetic expressions with identifiers, plus and multiplication, using standard precedence.",
   grammar: "E -> E '+' T | T\nT -> T '*' F | F\nF -> '(' E ')' | 'id'",
   input: "id + id * id",
+  tokenization: "literal",
   result: null,
   signature: null,
   video: null,
@@ -88,15 +93,15 @@ const navItems = [
   { path: "/research", label: "Research", icon: FlaskConical },
 ];
 const sourceNames = {
-  demo: "Reference demonstration",
-  learned: "Learned checkpoint",
-  rule: "Rule-based baseline",
+  learned: "BERT model",
+  manual: "My own DFA JSON",
+  demo: "Reference demonstration (no AI)",
   incorrect: "Incorrect candidate fixture",
 };
 const sourceDetails = {
   demo: "A known reference example. No learned prediction.",
-  learned: "Direct structured prediction from your local checkpoint.",
-  rule: "Limited handwritten patterns. Unsupported requests are reported.",
+  learned: "BERT language analysis with your selected formal-output decoder.",
+  manual: "Validate, inspect, and simulate a DFA you supply. No learned prediction.",
   incorrect: "A deliberate negative fixture to explore counterexamples.",
 };
 const phaseLabels = {
@@ -203,14 +208,14 @@ export default function App() {
     [connected, setConnected] = useState(null);
   const [settings, setSettings] = useStorageState(
     React,
-    "theorybert.settings.v3",
+    "theorybert.settings.v4",
     initialSettings,
   );
-  const [dfa, setDfa] = useStorageState(React, "theorybert.dfa.v3", initialDfa);
-  const [cfg, setCfg] = useStorageState(React, "theorybert.cfg.v3", initialCfg);
+  const [dfa, setDfa] = useStorageState(React, "theorybert.dfa.v4", initialDfa);
+  const [cfg, setCfg] = useStorageState(React, "theorybert.cfg.v4", initialCfg);
   const [sessions, setSessions] = useStorageState(
     React,
-    "theorybert.sessions.v3",
+    "theorybert.sessions.v4",
     [],
   );
   const [busy, setBusy] = useState({}),
@@ -243,6 +248,9 @@ export default function App() {
             setHosted(Boolean(health.hosted));
             setConnected(true);
             setCatalog(data);
+            if (data.active_model?.checkpoint) {
+              setSettings((previous) => !previous.checkpoint || previous.checkpoint === data.active_model.previous_checkpoint ? { ...previous, checkpoint: data.active_model.checkpoint } : previous);
+            }
           }
         })
         .catch(() => {
@@ -290,7 +298,7 @@ export default function App() {
         example_id: example.id,
       });
     else
-      setCfg({ ...initialCfg, grammar: example.grammar, input: example.input });
+      setCfg({ ...initialCfg, grammar: example.grammar, description: example.description, input: example.input });
     navigate(mode === "dfa" ? "/dfa" : "/grammar");
   }
   function restore(session) {
@@ -548,7 +556,7 @@ export default function App() {
           </span>
           <span>
             <ShieldCheck size={13} />
-            Verified before visualised.
+            Structure checked. Claims labelled.
           </span>
         </footer>
       </div>
@@ -759,27 +767,10 @@ function EmptyCanvas({ stale, cfg = false, error }) {
   return (
     <div className="canvas-empty">
       <div
-        className={`empty-graphic ${cfg ? "empty-tree" : ""}`}
+        className="empty-graphic empty-symbol"
         aria-hidden="true"
       >
-        {cfg ? (
-          <>
-            <span>E</span>
-            <div>
-              <i>E</i>
-              <i>+</i>
-              <i>T</i>
-            </div>
-          </>
-        ) : (
-          <>
-            <i>q₀</i>
-            <span>→</span>
-            <i>q₁</i>
-            <span>→</span>
-            <i>q₂</i>
-          </>
-        )}
+        {error ? <AlertCircle size={32} /> : cfg ? <GitBranch size={32} /> : <Network size={32} />}
       </div>
       <Badge
         icon={stale || error ? AlertCircle : Sparkles}
@@ -797,7 +788,7 @@ function EmptyCanvas({ stale, cfg = false, error }) {
           : error
             ? "There’s a detail to resolve."
             : cfg
-              ? "Every string has a structure."
+              ? "Reveal a string’s derivation."
               : "Give your language a shape."}
       </h3>
       <p>
@@ -806,13 +797,13 @@ function EmptyCanvas({ stale, cfg = false, error }) {
           : error ||
             (cfg
               ? "Choose a grammar, then parse and verify to reveal its derivation."
-              : "Choose an example or describe a language. Verify it to unlock interactive playback.")}
+              : "Describe a language for BERT, or supply your own DFA. Inspect its structure and follow the execution.")}
       </p>
       <div className="empty-proof">
         <ShieldCheck size={15} />
         {cfg
           ? "Every production and terminal leaf is checked."
-          : "Only independently verified machines can play."}
+          : "Candidate previews show execution; equivalence needs an independent reference."}
       </div>
     </div>
   );
@@ -914,12 +905,25 @@ function DfaStudio({
     form.source,
     form.example_id,
     form.reference_json,
+    form.candidate_json,
     settings.checkpoint,
     settings.budget,
   ]);
   const result = form.result,
     current = !!result && form.signature === signature;
-  const trace = current && result.verified ? result.trace : null;
+  const machineSignature = JSON.stringify([form.description, form.source, form.example_id, form.reference_json, form.candidate_json, settings.checkpoint, settings.budget]);
+  useEffect(() => {
+    if (!result?.dfa || current || form.machineSignature !== machineSignature || /[^01]/.test(form.input) || form.input.length > 40) return;
+    let live = true;
+    const timer = setTimeout(async () => {
+      try {
+        const response = await api("/simulate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ result_id: result.id, input: form.input }) });
+        if (live) { patch({ result: response, signature, video: null }); setError(""); }
+      } catch (exc) { if (live) setError(exc.message); }
+    }, 250);
+    return () => { live = false; clearTimeout(timer); };
+  }, [form.input, machineSignature, result?.id, form.machineSignature]);
+  const trace = current ? result.trace : null;
   const playback = usePlayback(
     current ? result.id : "none",
     trace?.steps.length || 0,
@@ -930,7 +934,7 @@ function DfaStudio({
         ? busy.render.phase
         : null;
   const patch = (values) => setForm((prev) => ({ ...prev, ...values }));
-  const selectedExample = catalog?.dfa.find(
+  const selectedExample = form.source === "manual" ? null : catalog?.dfa.find(
     (e) => e.id === form.example_id && e.description === form.description,
   );
   const stringError = /[^01]/.test(form.input)
@@ -940,13 +944,15 @@ function DfaStudio({
       : "";
   const blocked = !connected
     ? "Connect to the local engine to begin."
-    : !form.description.trim()
+    : !form.description.trim() && form.source !== "manual"
       ? "Describe a language or choose an example."
       : stringError ||
         (form.source === "demo" && !selectedExample
           ? "Choose an example for a reference demonstration, or change the prediction source."
-          : form.source === "learned" && !settings.checkpoint
-            ? "Choose a checkpoint in workspace settings."
+          : form.source === "learned" && !settings.checkpoint && !catalog?.active_model
+            ? "No trained BERT model is available. Configure a real checkpoint in workspace settings."
+            : form.source === "manual" && !form.candidate_json?.trim()
+              ? "Paste your DFA JSON to visualize and simulate it."
             : "");
   async function verify() {
     if (blocked || phase) return;
@@ -966,8 +972,8 @@ function DfaStudio({
       const response = await runTask(request, (value) =>
         setBusy((prev) => ({ ...prev, dfa: value })),
       );
-      patch({ result: response, signature, video: null });
-      remember(response, { ...form, result: null, video: null }, signature);
+      patch({ result: response, signature, machineSignature, video: null });
+      remember(response, { ...form, machineSignature, result: null, video: null }, signature);
     } catch (exc) {
       setError(exc.message);
     } finally {
@@ -1080,7 +1086,7 @@ function DfaStudio({
             ))}
           </div>
           <label className="field-label" htmlFor="language-description">
-            Language description <span>ENGLISH → DFA</span>
+            Language description <span>{form.source === "manual" ? "OPTIONAL NOTE" : "ENGLISH → DFA"}</span>
           </label>
           <textarea
             id="language-description"
@@ -1121,7 +1127,7 @@ function DfaStudio({
             </p>
           )}
           <p className="field-help">
-            Leave blank to explore the empty string, ε.
+            Leave blank for ε. After a build, changing this string updates the path automatically. The language description determines the machine and state count.
           </p>
           <label className="field-label" htmlFor="prediction-source">
             Prediction source
@@ -1142,6 +1148,22 @@ function DfaStudio({
             <ChevronDown size={15} />
           </div>
           <p className="field-help source-help">{sourceDetails[form.source]}</p>
+          {form.source === "manual" && (
+            <>
+              <label className="field-label" htmlFor="candidate-json">Your DFA JSON</label>
+              <textarea id="candidate-json" className="json-editor" aria-label="Your DFA JSON"
+                value={form.candidate_json || ""} onChange={(e) => patch({ candidate_json: e.target.value })}
+                placeholder={'{"states":["q0"],"alphabet":["0","1"],"transitions":{"q0":{"0":"q0","1":"q0"}},"start_state":"q0","accept_states":["q0"]}'} disabled={!!phase} />
+              <label className="upload-button"><Upload size={13} /> Upload your DFA
+                <input type="file" accept=".json,application/json" disabled={!!phase} onChange={async (event) => {
+                  const file = event.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > 120000) { setError("Use a DFA JSON file smaller than 120 KB."); return; }
+                  patch({ candidate_json: await file.text() }); event.target.value = "";
+                }} />
+              </label>
+            </>
+          )}
           {form.source === "learned" && (
             <button className="checkpoint-shortcut" onClick={openSettings}>
               <Settings2 size={13} />
@@ -1249,12 +1271,13 @@ function DfaStudio({
             {phase ? (
               <Progress phase={phase} />
             ) : current ? (
-              result.verified ? (
+              result.dfa ? (
                 result.graph ? (
                   <Diagram
                     key={result.id}
                     graph={result.graph}
                     dfa={result.dfa}
+                    verified={result.verified}
                     active={active}
                     transition={transition}
                     selected={selected}
@@ -1263,10 +1286,10 @@ function DfaStudio({
                 ) : (
                   <div className="visual-limit">
                     <Network size={32} />
-                    <h3>Verified, with a larger structure.</h3>
+                    <h3>{result.verified ? "Verified machine" : "Candidate preview"}, with a larger structure.</h3>
                     <p>{result.visual_error}</p>
                     <Badge tone="success" icon={ShieldCheck}>
-                      {result.dfa.states.length} states · language verified
+                      {result.dfa.states.length} states · {result.verified ? "language verified" : "structure checked"}
                     </Badge>
                   </div>
                 )
@@ -1277,7 +1300,11 @@ function DfaStudio({
               <EmptyCanvas stale={!!result} error={error} />
             )}
           </div>
-          {current && result.verified && (
+          {current && result.dfa && <MachineSummary result={result} />}
+          {current && result.visualization_notice && (
+            <p className="scope-note" role="status">{result.visualization_notice}</p>
+          )}
+          {current && trace && (
             <>
               <Playback
                 playback={playback}
@@ -1295,6 +1322,10 @@ function DfaStudio({
                       : "Non-accepting state"}
                     {selected === result.dfa.start_state ? " · initial" : ""}
                   </span>
+                  {result.analysis?.states[selected] && <span className="state-meaning">
+                    {result.analysis.states[selected].dead ? "No accepting continuation" : `Shortest accepting continuation: ${result.analysis.states[selected].accepting_suffix || "ε"}`}
+                    {result.analysis.states[selected].access_word != null && ` · Reach with ${result.analysis.states[selected].access_word || "ε"}`}
+                  </span>}
                   <div>
                     {Object.entries(result.dfa.transitions[selected]).map(
                       ([a, target]) => (
@@ -1322,7 +1353,7 @@ function DfaStudio({
               <ShieldCheck size={14} />
               {current && result.verified
                 ? "The checked trace powers every frame."
-                : "Verification unlocks animation."}
+                : "Independent equivalence verification unlocks video export."}
             </span>
             <Button
               variant="secondary"
@@ -1347,7 +1378,7 @@ function DfaStudio({
           )}
         </section>
       </div>
-      {current && <DfaEvidence result={result} />}
+      {current && <DfaEvidence key={result.id} result={result} />}
       <div className="scope-note">
         <Info size={15} />
         <p>
@@ -1367,6 +1398,56 @@ function DfaStudio({
   );
 }
 
+function MachineSummary({ result }) {
+  const { dfa, analysis } = result;
+  return <div className="machine-summary" aria-label="Machine interpretation and structure">
+    <div className="machine-metrics">
+      <span><b>{dfa.states.length}</b> states</span>
+      <span><b>{analysis?.transitions ?? dfa.states.length * 2}</b> transitions</span>
+      <span><b>{dfa.accept_states.length}</b> accepting</span>
+      <span><b>{result.input.length}</b> input symbols</span>
+    </div>
+    <details className="execution-path"><summary>Path for {result.input || "ε"} · {result.trace.accepted ? "ACCEPT" : "REJECT"}</summary>
+      <div>{analysis?.path.map((state, i) => <React.Fragment key={i}>{i > 0 && <span className="path-symbol">—{result.input[i-1]}→</span>}<StateTag small dfa={dfa} state={state} /></React.Fragment>)}</div>
+    </details>
+  </div>;
+}
+
+function CompilerAnalysis({ result }) {
+  const analysis = result.analysis;
+  if (!analysis) return <p className="scope-note">Parse the current grammar again to compute compiler analysis.</p>;
+  return <div className="compiler-analysis">
+    <div className="compiler-intro"><Code2 size={20} /><div><h3>From source text to checked derivation</h3><p>Tokens → grammar analysis → Earley parse → checked tree. FIRST, FOLLOW and the predictive table describe this grammar; Earley also handles grammars with LL(1) conflicts.</p></div></div>
+    <div className="compiler-tokens"><span className="eyebrow">LEXER OUTPUT · SOURCE CHARACTER SPANS</span><div>{result.lexemes?.length ? result.lexemes.map((row, i) => <span key={i} title={`Characters ${row.start+1}–${row.end}`}><code>{row.token}</code><small>{row.start+1}–{row.end}</small></span>) : <code>ε · no tokens</code>}</div></div>
+    {result.compiler && <ArithmeticOutput compiler={result.compiler} lexemes={result.lexemes} />}
+    <div className="compiler-status"><Badge tone={analysis.ll1 ? "success" : "warning"}>{analysis.ll1 ? "LL(1) table has no conflicts" : `${analysis.conflicts.length} LL(1) table conflicts`}</Badge><span>Nullable: {analysis.nullable.join(", ") || "none"}</span></div>
+    <div className="table-scroll"><table><thead><tr><th>NONTERMINAL</th><th>FIRST</th><th>FOLLOW</th><th>NULLABLE</th></tr></thead><tbody>{result.spec.nonterminals.map((symbol) => <tr key={symbol}><td><code>{symbol}</code></td><td className="mono">{`{ ${analysis.first[symbol].join(", ")} }`}</td><td className="mono">{`{ ${analysis.follow[symbol].join(", ")} }`}</td><td>{analysis.nullable.includes(symbol) ? "Yes · ε" : "No"}</td></tr>)}</tbody></table></div>
+    <details className="predictive-table" open={!analysis.ll1}><summary>Predictive parsing table{!analysis.ll1 ? " · review conflicts" : ""}</summary>
+      <p>⟨EOF⟩ marks end of input. A conflict means this grammar is not LL(1); it does not by itself prove ambiguity.</p>
+      <div className="table-scroll"><table><thead><tr><th>NONTERMINAL</th><th>LOOKAHEAD</th><th>PRODUCTION</th></tr></thead><tbody>{analysis.table.map((cell, i) => <tr key={i} className={cell.productions.length > 1 ? "conflict-row" : ""}><td><code>{cell.nonterminal}</code></td><td><code>{cell.lookahead}</code></td><td>{cell.productions.map((p) => <div className="mono" key={p}>{analysis.productions[p]}</div>)}</td></tr>)}</tbody></table></div>
+    </details>
+    {analysis.warnings.map((warning) => <p key={warning} className="model-check repaired">{warning}</p>)}
+  </div>;
+}
+
+function ArithmeticOutput({ compiler, lexemes }) {
+  const [selected, setSelected] = useState(null);
+  const node = selected ? compiler.layout?.nodes[selected] : null;
+  const operand = (arg) => arg.kind === "temporary" ? `%${arg.value}` : arg.value;
+  return <section className="arithmetic-output">
+    <div className="compiler-status"><Badge tone="success" icon={Check}>IR preserves the syntax tree</Badge><span>Inputs: {compiler.inputs.join(", ") || "constants only"}</span></div>
+    <h3>Abstract syntax tree</h3>
+    <p>Parentheses and grammar scaffolding disappear; operators retain their operands and evaluation order.</p>
+    {compiler.layout ? <Diagram layout={compiler.layout} steps={compiler.steps} treeStep={compiler.steps.length} treeKind="ast" className="ast-diagram" onSelect={setSelected} selected={selected} /> : <p className="scope-note">{compiler.visual_error}</p>}
+    {node && <p className="ast-inspector"><code>{node.symbol}</code> · {node.terminal ? "Input operand" : `${node.children.length === 1 ? "Unary" : "Binary"} operator · operands: ${node.children.map((c) => c.symbol).join(", ")}`}</p>}
+    <h3>Three-address code</h3>
+    <div className="table-scroll"><table><thead><tr><th>RESULT</th><th>OPERATOR</th><th>OPERANDS</th></tr></thead><tbody>{compiler.instructions.map((row) => <tr key={row.target}><td><code>%{row.target}</code></td><td><code>{row.operator}</code></td><td className="mono">{row.arguments.map(operand).join(", ")}</td></tr>)}</tbody></table></div>
+    <p className="ir-result">Expression result: <code>{operand(compiler.result)}</code></p>
+    <details className="predictive-table"><summary>Source lexemes and token kinds</summary><div className="table-scroll"><table><thead><tr><th>LEXEME</th><th>TOKEN</th><th>CHARACTERS</th></tr></thead><tbody>{lexemes.map((row, i) => <tr key={i}><td><code>{row.lexeme}</code></td><td><code>{row.token}</code></td><td>{row.start+1}–{row.end}</td></tr>)}</tbody></table></div></details>
+    <p>{compiler.scope}</p>
+  </section>;
+}
+
 function GrammarLab({
   catalog,
   connected,
@@ -1382,9 +1463,12 @@ function GrammarLab({
     [selected, setSelected] = useState(null),
     [videoOpen, setVideoOpen] = useState(false);
   const signature = JSON.stringify([
-    form.grammar,
+    (form.grammarSource || "learned") === "learned" ? form.description : form.grammar,
+    form.grammarSource || "learned",
     form.input,
+    form.tokenization || "literal",
     settings.parseLimit,
+    catalog?.active_grammar?.checkpoint,
   ]);
   const result = form.result,
     current = !!result && form.signature === signature;
@@ -1402,13 +1486,18 @@ function GrammarLab({
   const patch = (values) => setForm((prev) => ({ ...prev, ...values }));
   const blocked = !connected
     ? "Connect to the local engine to begin."
-    : !form.grammar.trim()
-      ? "Write a grammar or choose an example."
+    : (form.grammarSource || "learned") === "learned" ? !form.description?.trim() ? "Describe the language for BERT or choose an example." : !catalog?.grammar_model ? "The BERT grammar decoder is training; wait for its evaluated checkpoint." : ""
+      : !form.grammar.trim() ? "Write a grammar or choose an example."
       : "";
+  useEffect(() => {
+    if (!result || current || phase || !connected || ((form.grammarSource || "learned") === "learned" ? result.description !== form.description : result.grammar !== form.grammar) || (result.tokenization || "literal") !== (form.tokenization || "literal")) return;
+    const timer = setTimeout(() => verify(), 550);
+    return () => clearTimeout(timer);
+  }, [form.input, form.grammar, form.description, form.grammarSource, form.tokenization, result?.id, connected]);
   async function verify() {
     if (blocked || phase) return;
     setError("");
-    patch({ result: null, signature: null, video: null, treeIndex: 0 });
+    patch({ result: null, signature: null, video: null, treeIndex: 0, generatedGrammar: null });
     setSelected(null);
     setBusy((prev) => ({ ...prev, cfg: "parsing" }));
     try {
@@ -1416,12 +1505,16 @@ function GrammarLab({
         {
           kind: "cfg",
           grammar: form.grammar,
+          grammar_source: form.grammarSource || "learned",
+          description: form.description,
+          grammar_result_id: result?.id,
           input: form.input,
+          tokenization: form.tokenization || "literal",
           limit: settings.parseLimit,
         },
         (value) => setBusy((prev) => ({ ...prev, cfg: value })),
       );
-      patch({ result: response, signature, video: null, treeIndex: 0 });
+      patch({ result: response, grammar: response.grammar, signature, video: null, treeIndex: 0 });
       remember(
         response,
         { ...form, treeIndex: 0, result: null, video: null },
@@ -1429,6 +1522,7 @@ function GrammarLab({
       );
     } catch (exc) {
       setError(exc.message);
+      if (exc.candidateGrammar != null) patch({ generatedGrammar: exc.candidateGrammar, generatedDescription: form.description });
     } finally {
       setBusy((prev) => ({ ...prev, cfg: null }));
     }
@@ -1528,7 +1622,7 @@ function GrammarLab({
                 className={e.grammar === form.grammar ? "selected" : ""}
                 disabled={!!phase}
                 onClick={() => {
-                  patch({ grammar: e.grammar, input: e.input });
+                  patch({ grammar: e.grammar, description: e.description, input: e.input, tokenization: "literal" });
                   setError("");
                 }}
               >
@@ -1539,9 +1633,20 @@ function GrammarLab({
                     : e.name}
               </button>
             ))}
+            {catalog?.compiler && <button disabled={!!phase} className={form.tokenization === "expression" ? "selected" : ""} onClick={() => {
+              patch({ ...catalog.compiler, tokenization: "expression" });
+              setError("");
+            }}>Arithmetic compiler</button>}
           </div>
+          <label className="field-label" htmlFor="grammar-source">Grammar source</label>
+          <div className="select-wrap"><select id="grammar-source" value={form.grammarSource || "learned"} disabled={!!phase} onChange={(e) => patch({ grammarSource: e.target.value })}>
+            <option value="learned">BERT language analysis → CFG</option><option value="supplied">My formal CFG · no language prediction</option>
+          </select><ChevronDown size={15} /></div>
+          {(form.grammarSource || "learned") === "learned" && <><label className="field-label" htmlFor="grammar-description">Language description <span>ENGLISH → BERT → CFG</span></label>
+            <textarea id="grammar-description" className="language-editor" value={form.description || ""} disabled={!!phase} onChange={(e) => patch({ description: e.target.value })} placeholder="Describe the language BERT should generate productions for." />
+            <p className="field-help">A trained decoder predicts the production tokens from BERT features. No grammar template is selected by English rules.</p></>}
           <label className="field-label" htmlFor="grammar-editor">
-            Context-free grammar <span>CFG</span>
+            {(form.grammarSource || "learned") === "learned" ? "BERT-generated productions" : "Context-free grammar"} <span>CFG</span>
           </label>
           <div className="code-editor">
             <div className="line-numbers" aria-hidden="true">
@@ -1552,13 +1657,15 @@ function GrammarLab({
             <textarea
               id="grammar-editor"
               spellCheck="false"
-              value={form.grammar}
+              value={(form.grammarSource || "learned") === "learned" ? current ? result.grammar : form.generatedDescription === form.description ? form.generatedGrammar || "" : "" : form.grammar}
+              readOnly={(form.grammarSource || "learned") === "learned"}
               onChange={(e) => patch({ grammar: e.target.value })}
               disabled={!!phase}
               maxLength={12000}
-              placeholder="S -> 'a' S 'b' |"
+              placeholder={(form.grammarSource || "learned") === "learned" ? "Analyze the language to see BERT’s actual productions." : "S -> 'a' S 'b' |"}
             />
           </div>
+          {(form.grammarSource || "learned") === "learned" && form.generatedGrammar && !current && form.generatedDescription === form.description && <p className="field-help">These are BERT’s actual productions from the failed request. No replacement grammar or tree was supplied.</p>}
           <div className="syntax-help">
             <Code2 size={14} />
             <span>
@@ -1580,8 +1687,16 @@ function GrammarLab({
             />
           </div>
           <p className="field-help">
-            Separate every token with a space. Blank input means ε.
+            Blank input means ε. After a successful parse, changing the input automatically rebuilds the tree. The lexer uses your declared terminals.
           </p>
+          <label className="field-label" htmlFor="grammar-tokenization">Tokenization</label>
+          <div className="select-wrap"><select id="grammar-tokenization" value={form.tokenization || "literal"} disabled={!!phase}
+            onChange={(e) => patch({ tokenization: e.target.value })}>
+            <option value="literal">Grammar terminals · longest match</option>
+            <option value="whitespace">Tokens separated by spaces</option>
+            {(form.tokenization === "expression" || form.grammar === catalog?.compiler?.grammar) && <option value="expression">Arithmetic lexer · identifiers & numbers</option>}
+          </select><ChevronDown size={15} /></div>
+          <p className="field-help">Longest match accepts aabb or id+id*id directly. For overlapping terminals, choose spaces to specify token boundaries.</p>
           <div className="parser-note">
             <span className="parser-note-icon">
               <GitBranch size={17} />
@@ -1688,6 +1803,7 @@ function GrammarLab({
               <EmptyCanvas stale={!!result} cfg error={error} />
             )}
           </div>
+          {current && result.language_notice && <p className="scope-note">{result.language_notice}</p>}
           {current && (
             <>
               <Playback
@@ -1881,7 +1997,7 @@ function DfaTable({ dfa }) {
   );
 }
 function DfaEvidence({ result }) {
-  const [tableView, setTableView] = useState("minimal");
+  const [tableView, setTableView] = useState(result.prediction_source === "manual" ? "first" : "minimal");
   const candidate =
     tableView === "first"
       ? result.attempted_candidates[0]
@@ -2067,6 +2183,7 @@ function CfgEvidence({ result, index }) {
         "Verification",
         "Grammar & tree",
         "Derivation steps",
+        "Compiler analysis",
         "Parse details",
       ]}
     >
@@ -2146,6 +2263,8 @@ function CfgEvidence({ result, index }) {
               </tbody>
             </table>
           </div>
+        ) : tab === "Compiler analysis" ? (
+          <CompilerAnalysis result={result} />
         ) : (
           <div className="parse-details">
             <div>
@@ -2382,8 +2501,8 @@ function Research() {
       .then(setData)
       .catch((e) => setError(e.message));
   }, []);
-  const baseline = data?.baseline?.semantic,
-    structural = data?.baseline?.structural;
+  const baseline = (data?.learned || data?.baseline)?.semantic,
+    structural = (data?.learned || data?.baseline)?.structural;
   const percentage = (value) =>
     value == null ? "—" : `${(value * 100).toFixed(0)}%`;
   return (
@@ -2404,10 +2523,11 @@ function Research() {
         <div>
           <h2>A working prototype. An open research question.</h2>
           <p>
-            TheoryBERT studies vocabulary extension and embedding initialisation
-            with a frozen BERT backbone. The 70% equivalence goal is a research
-            target; full pretrained experiments have not been run.
+            TheoryBERT studies learned prediction of formal language structures.
+            The active model uses pretrained BERT language features and a learned formal-output decoder. Results measure the documented benchmark and its supported language families. {data?.learned_training ? "The local model and decoder have completed supervised training; measured regression results are reported below." : "No completed pretrained run is recorded on this installation."}
           </p>
+          {data?.grammar_model && <p>Grammar production decoder: {percentage(data.grammar_model.test_production_token_exact)} exact production-token outputs on {data.grammar_model.splits.test} held-out generated descriptions. This measures the bounded grammar benchmark; it does not prove agreement with arbitrary English.</p>}
+          {data?.challenge && <p>Fresh wording challenge: DFA {percentage(data.challenge.after.modes.dfa.accuracy)}, grammar {percentage(data.challenge.after.modes.cfg.accuracy)}, compiler {percentage(data.challenge.after.modes.compiler.accuracy)} on the reserved cases. These small challenge scores are separate from the generated benchmark above; grammar membership checks are bounded.</p>}
         </div>
         <Badge tone="blue">RESEARCH IN PROGRESS</Badge>
       </div>
@@ -2420,16 +2540,16 @@ function Research() {
         <section className="panel measurement-panel">
           <div className="panel-heading">
             <div>
-              <span className="eyebrow">MEASURED BASELINE</span>
+              <span className="eyebrow">{data?.learned ? "MEASURED BERT MODEL" : "MEASURED BASELINE"}</span>
               <h2>How often does the language match?</h2>
             </div>
             <Badge icon={Check}>ACTUALLY EXECUTED</Badge>
           </div>
           <p className="muted">
-            Limited rule-based predictor · shipped held-out test split
+            {data?.learned ? "Pretrained BERT language analysis · measured regression set · no rule fallback" : "Limited rule-based predictor · shipped held-out test split"}
           </p>
           <div className="big-metric">
-            <b>{percentage(baseline?.raw_equivalence)}</b>
+            <b>{percentage(data?.learned?.semantic?.raw_equivalence ?? baseline?.raw_equivalence)}</b>
             <span>
               exact language equivalence
               <br />
@@ -2442,7 +2562,7 @@ function Research() {
           </div>
           <div
             className="accuracy-bar"
-            aria-label={`Measured rule baseline equivalence ${percentage(baseline?.raw_equivalence)}`}
+            aria-label={`Measured ${data?.learned ? "BERT" : "rule baseline"} equivalence ${percentage(baseline?.raw_equivalence)}`}
           >
             <motion.div
               initial={{ width: 0 }}
@@ -2500,8 +2620,8 @@ function Research() {
               },
               {
                 icon: Layers3,
-                title: "Frozen BERT backbone",
-                sub: "Trainable vocabulary & contextual extension",
+                title: "Pretrained BERT encoder",
+                sub: "Frozen lower layers · fine-tuned upper layers",
               },
               {
                 icon: Network,
@@ -2529,7 +2649,7 @@ function Research() {
             ))}
           </div>
           <Badge tone="warning" icon={Info}>
-            No trained pretrained checkpoint yet
+            {data?.active_model ? "Fine-tuned pretrained BERT active" : "No evaluated BERT model activated"}
           </Badge>
         </section>
       </div>
@@ -2720,7 +2840,7 @@ function SettingsModal({ settings, setSettings, catalog, onClose }) {
       <input
         id="checkpoint-path"
         className="text-input standalone mono"
-        placeholder="artifacts/theorybert/best"
+        placeholder="artifacts/bert-engine/best"
         value={settings.checkpoint}
         onChange={(e) => patch({ checkpoint: e.target.value })}
       />
@@ -2865,7 +2985,7 @@ function Guide({ onClose, catalog }) {
           },
           {
             n: "02",
-            title: "Check before you play",
+            title: "Check the language claim",
             text: "DFA verification compares two independent formal machines. Grammar verification checks one legal derivation of your exact tokens.",
           },
           {
@@ -2892,8 +3012,8 @@ function Guide({ onClose, catalog }) {
         <ShieldCheck size={20} />
         <p>
           <b>A clear boundary, always.</b> Reference demonstrations are
-          labelled. Learned inference requires a checkpoint. An unverified
-          candidate cannot be animated.
+          labelled. BERT candidates can be inspected and simulated. Video
+          exports require independent language verification.
         </p>
       </div>
       <div className="modal-footer">

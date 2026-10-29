@@ -1,6 +1,8 @@
 """exBERT-inspired residual adapter, not an exact exBERT reproduction."""
 
 import json
+import os
+from contextlib import nullcontext
 from pathlib import Path
 import torch
 from torch import nn
@@ -26,12 +28,12 @@ DOMAIN_TOKENS = [
 class SplitEmbedding(nn.Module):
     """Separate tables make weight decay unable to change original rows."""
 
-    def __init__(self, original, added):
+    def __init__(self, original, added, copy=True):
         super().__init__()
-        self.original = nn.Embedding.from_pretrained(
-            original.detach().clone(), freeze=True
-        )
-        self.extra = nn.Embedding.from_pretrained(added.detach().clone(), freeze=False)
+        original = original.detach().clone() if copy else original.detach()
+        added = added.detach().clone() if copy else added.detach()
+        self.original = nn.Embedding.from_pretrained(original, freeze=True)
+        self.extra = nn.Embedding.from_pretrained(added, freeze=False)
         self.n_original = len(original)
         self.num_embeddings = len(original) + len(added)
         self.embedding_dim = original.shape[1]
@@ -93,7 +95,7 @@ def extend_tokenizer(tokenizer, backbone, tokens, strategy="subword_mean", seed=
 
 
 class StructuredModel(nn.Module):
-    def __init__(self, backbone, max_states=8, variant="theorybert", dropout=0.1):
+    def __init__(self, backbone, max_states=8, variant="theorybert", dropout=0.1, fine_tune_layers=0):
         super().__init__()
         self.backbone = backbone
         self.max_states, self.variant = max_states, variant
@@ -104,6 +106,14 @@ class StructuredModel(nn.Module):
         emb = backbone.get_input_embeddings()
         if isinstance(emb, SplitEmbedding):
             emb.extra.weight.requires_grad_(True)
+        self.fine_tune_layers = fine_tune_layers
+        if fine_tune_layers:
+            if not hasattr(backbone, "encoder") or not 1 <= fine_tune_layers <= len(backbone.encoder.layer):
+                raise ValueError("fine_tune_layers requires a supported BERT encoder.")
+            for layer in backbone.encoder.layer[-fine_tune_layers:]:
+                layer.requires_grad_(True)
+            # Caching the immutable lower encoder requires immutable embeddings.
+            backbone.embeddings.requires_grad_(False)
         self.extension = (
             nn.TransformerEncoderLayer(
                 h,
@@ -124,13 +134,34 @@ class StructuredModel(nn.Module):
 
     def train(self, mode=True):
         super().train(mode)
-        self.backbone.eval()  # Frozen backbone dropout stays deterministic; gradients still flow to added embeddings.
+        # Keep encoder dropout deterministic for full/cache parity. Autograd
+        # still updates explicitly unfrozen encoder blocks or added embeddings.
+        self.backbone.eval()
         return self
 
     def forward(self, input_ids, attention_mask, **kwargs):
         hidden = self.backbone(
             input_ids=input_ids, attention_mask=attention_mask
         ).last_hidden_state
+        return self.forward_hidden(hidden, attention_mask)
+
+    def encode_lower(self, input_ids, attention_mask):
+        """Cache only frozen BERT layers; upper pretrained layers still train."""
+        if not self.fine_tune_layers:
+            raise ValueError("Lower-layer caching requires fine_tune_layers.")
+        hidden = self.backbone.embeddings(input_ids=input_ids)
+        mask = self.backbone.get_extended_attention_mask(attention_mask, input_ids.shape)
+        for layer in self.backbone.encoder.layer[:-self.fine_tune_layers]:
+            hidden = layer(hidden, attention_mask=mask)[0]
+        return hidden
+
+    def forward_cached(self, hidden, attention_mask):
+        mask = self.backbone.get_extended_attention_mask(attention_mask, attention_mask.shape)
+        for layer in self.backbone.encoder.layer[-self.fine_tune_layers:]:
+            hidden = layer(hidden, attention_mask=mask)[0]
+        return self.forward_hidden(hidden, attention_mask)
+
+    def forward_hidden(self, hidden, attention_mask):
         if self.variant == "theorybert":
             hidden = hidden + self.extension(
                 hidden, src_key_padding_mask=~attention_mask.bool()
@@ -140,8 +171,10 @@ class StructuredModel(nn.Module):
             / attention_mask.sum(1, keepdim=True).clamp(min=1)
         )
         pooled = self.dropout(pooled)
-        b = len(input_ids)
+        b = len(hidden)
         out = {
+            "token_features": hidden,
+            "features": pooled,
             "count": self.count_head(pooled),
             "accept": self.accept_head(pooled),
             "transition": self.transition_head(pooled).reshape(
@@ -251,7 +284,8 @@ def build(config, tiny=False):
             config.get("seed", 42),
         )
     model = StructuredModel(
-        backbone, config.get("max_states", 8), config.get("variant", "theorybert")
+        backbone, config.get("max_states", 8), config.get("variant", "theorybert"),
+        config.get("dropout", 0.1), config.get("fine_tune_layers", 0),
     )
     return model, tokenizer, audit
 
@@ -266,41 +300,52 @@ def save_checkpoint(path, model, tokenizer, config, audit, optimizer=None, epoch
             {**config, "schema_version": "1.0", "embedding_audit": audit}, indent=2
         )
     )
+    temporary = path / "weights.pt.partial"
     torch.save(
         {
             "model": model.state_dict(),
             "optimizer": optimizer.state_dict() if optimizer else None,
             "epoch": epoch,
         },
-        path / "weights.pt",
+        temporary,
     )
+    temporary.replace(path / "weights.pt")
 
 
-def load_checkpoint(path, device="cpu"):
+def load_checkpoint(path, device="cpu", memory_efficient=None):
+    """Load identical FP32 tensors, optionally retaining file-backed CPU storage.
+
+    The mapped path uses meta initialization and assign=True, avoiding an
+    anonymous full-model allocation and copy. It never quantizes parameters.
+    """
     path = Path(path)
     config = json.loads((path / "config.json").read_text())
     if config.get("schema_version") != "1.0":
         raise ValueError("Unsupported checkpoint schema.")
-    backbone = AutoModel.from_config(
-        AutoConfig.from_pretrained(path / "backbone_config")
-    )
-    tokenizer = AutoTokenizer.from_pretrained(path / "tokenizer")
-    # Original vocab size is persisted in backbone config; split-table state is in the checkpoint.
-    state = torch.load(path / "weights.pt", map_location="cpu", weights_only=True)
-    if "backbone.embeddings.word_embeddings.extra.weight" in state["model"]:
+    if memory_efficient is None:
+        memory_efficient = os.environ.get("THEORYBERT_MMAP_WEIGHTS") == "1"
+    if memory_efficient and str(device) != "cpu":
+        raise ValueError("File-backed checkpoint loading requires CPU inference.")
+    state = torch.load(path / "weights.pt", map_location="cpu", weights_only=True, mmap=True)
+    tokenizer = AutoTokenizer.from_pretrained(path / "tokenizer", local_files_only=True)
+    with torch.device("meta") if memory_efficient else nullcontext():
+        backbone = AutoModel.from_config(AutoConfig.from_pretrained(path / "backbone_config", local_files_only=True))
         key = "backbone.embeddings.word_embeddings."
-    elif "backbone.embeddings.word_embeddings.original.weight" in state["model"]:
-        key = "backbone.embeddings.word_embeddings."
-    else:
-        key = None
-    if key:
-        backbone.set_input_embeddings(
-            SplitEmbedding(
+        if key + "original.weight" in state["model"]:
+            backbone.set_input_embeddings(SplitEmbedding(
                 state["model"][key + "original.weight"],
-                state["model"][key + "extra.weight"],
-            )
-        )
-    model = StructuredModel(backbone, config["max_states"], config["variant"])
-    model.load_state_dict(state["model"])
+                state["model"][key + "extra.weight"], copy=not memory_efficient))
+        model = StructuredModel(backbone, config["max_states"], config["variant"], config.get("dropout", 0.1), config.get("fine_tune_layers", 0))
+    model.load_state_dict(state["model"], assign=bool(memory_efficient))
+    if memory_efficient:
+        # These BERT buffers are deliberately nonpersistent and absent from a
+        # state_dict. Recreate their ordinary integer values after meta init.
+        embeddings = model.backbone.embeddings
+        if hasattr(embeddings, "position_ids") and embeddings.position_ids.is_meta:
+            embeddings.position_ids = torch.arange(model.backbone.config.max_position_embeddings).expand((1, -1))
+        if hasattr(embeddings, "token_type_ids") and embeddings.token_type_ids.is_meta:
+            embeddings.token_type_ids = torch.zeros((1, model.backbone.config.max_position_embeddings), dtype=torch.long)
+        if any(b.is_meta for b in model.buffers()):
+            raise ValueError("Unsupported nonpersistent meta buffer in this checkpoint.")
     model.to(device).eval()
     return model, tokenizer, config

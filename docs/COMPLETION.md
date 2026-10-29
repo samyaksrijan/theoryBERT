@@ -1,5 +1,7 @@
 # Prompt audit · 23 October 2026
 
+**Learned engine update · 28 October 2026:** genuine pretrained BERT fine-tuning is now explicitly authorized and implemented in the dedicated [local workflow](LOCAL-BERT.md). It updates upper BERT blocks and direct DFA heads; original matched vanilla/adapted studies remain separate and unrun. The earlier audit and opt-in status below describe the original delivery, not the current local model. The app defaults to the explicitly activated, evaluated real model and never silently substitutes the rule baseline.
+
 **Product update · 24 October 2026:** the follow-up request for a multipage React product is implemented in `frontend/` and `src/theorybert/web.py`. React is now the main interface, with a reference-inspired public landing, DFA Studio, Grammar Lab, Example Library and Research page, a shared white/black/pink identity, motion, canvas playback and real API-backed verification/export. The original canvas layout and controls are preserved; diagrams, tables and video exports share the updated state palette. The original Streamlit app remains available as a legacy interface. See `UI-DESIGN.md` for the current product architecture and validation commands.
 
 The local prototype is implemented. Genuine pretrained training and research comparisons remain unexecuted; the original prompt explicitly makes those experiments opt-in. No pretrained research accuracy is claimed.

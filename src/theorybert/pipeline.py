@@ -117,6 +117,10 @@ def run_candidates(
                 provenance or "User-supplied reference",
             )
             break
+        if reference is None and report.status == Status.REFERENCE_UNAVAILABLE:
+            # Without semantic evidence there is no basis for selecting a
+            # lower-ranked alternative over the predictor's first valid choice.
+            break
         if len(attempted) >= budget:
             break
     if not reports:

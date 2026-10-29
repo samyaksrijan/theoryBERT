@@ -1,0 +1,125 @@
+{
+  "version": "bert-plan-2026-10-29",
+  "url": "https://github.com/samyaksrijan/theoryBERT/releases/download/bert-plan-2026-10-29/theorybert-bert-plan-2026-10-29.tar.gz",
+  "bytes": 429169851,
+  "sha256": "b1cf64fa9726abc0d13e3a6dd8e71565ec7c092f3bde5d15c66e415fa5b11c7a",
+  "unpacked_bytes": 462577645,
+  "precision": "Original evaluated FP32 weights, no quantization or retraining",
+  "files": [
+    {
+      "path": "artifacts/active-grammar.json",
+      "bytes": 307,
+      "sha256": "76a60b7f46319c3dc6f7f76e090188311d56ba9cebf78bf9af9a43a5441fe281"
+    },
+    {
+      "path": "artifacts/active-model.json",
+      "bytes": 320,
+      "sha256": "86e4f1e108556ced54faa4825d37f46be96898fe1ad4b9746debf8a092b93162"
+    },
+    {
+      "path": "artifacts/bert-plan/best/config.json",
+      "bytes": 1106,
+      "sha256": "28847853cb43ae6df9bd467aa7304ad44ac270864867fcf36b4e1ac7e271fe47"
+    },
+    {
+      "path": "artifacts/bert-plan/best/head.pt",
+      "bytes": 2162435,
+      "sha256": "19db622f90ce68ca293c210367c5f6a263f1e2441ad58b4b38403f32a13437b3"
+    },
+    {
+      "path": "artifacts/bert-plan/best/summary.json",
+      "bytes": 713,
+      "sha256": "9aa6dfb2f2020c4e74eec98e20323a7fcec56a766652e719917b2f220f754b01"
+    },
+    {
+      "path": "artifacts/bert-v3/best/backbone_config/config.json",
+      "bytes": 618,
+      "sha256": "4771cc508296d2354ff720f15fb9dbf628f3f22de2dc7d8a2bc08d087e521343"
+    },
+    {
+      "path": "artifacts/bert-v3/best/config.json",
+      "bytes": 2733,
+      "sha256": "69d6dab9a49c89209dd675fa0b4b30b3d70a2212f54afbad6c3e5c6d5d6e08ff"
+    },
+    {
+      "path": "artifacts/bert-v3/best/tokenizer/added_tokens.json",
+      "bytes": 80,
+      "sha256": "ceef9e8d33bc4f0ed4750fbca64443f362bb1e9b347e409053297064d9439023"
+    },
+    {
+      "path": "artifacts/bert-v3/best/tokenizer/special_tokens_map.json",
+      "bytes": 695,
+      "sha256": "5d5b662e421ea9fac075174bb0688ee0d9431699900b90662acd44b2a350503a"
+    },
+    {
+      "path": "artifacts/bert-v3/best/tokenizer/tokenizer.json",
+      "bytes": 712288,
+      "sha256": "d1f9ab3f2874c108aa94472508cbbf30914f420a79f0e2f933def9933010ac45"
+    },
+    {
+      "path": "artifacts/bert-v3/best/tokenizer/tokenizer_config.json",
+      "bytes": 2063,
+      "sha256": "309706351a89fbfe175da08800711b051cf4bb54083610d2daf61bc08bce089d"
+    },
+    {
+      "path": "artifacts/bert-v3/best/tokenizer/vocab.txt",
+      "bytes": 231508,
+      "sha256": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3"
+    },
+    {
+      "path": "artifacts/bert-v3/best/weights.pt",
+      "bytes": 457389677,
+      "sha256": "fe1ae7d138ff679b6c4bce38b7b1aded3191c2e59f96cc8fd78c3190cd6bacd4"
+    },
+    {
+      "path": "artifacts/bert-v3/summary.json",
+      "bytes": 903,
+      "sha256": "1438c4958fd3e59fffb12da587892d3357aeff56ae5a4c3d4fc6adebd033f816"
+    },
+    {
+      "path": "artifacts/challenge-comparison.json",
+      "bytes": 6129,
+      "sha256": "e852c6a7e5489668fa4b1d11ca6cb0a1f5350dfa17a66f9b443aea56bda56000"
+    },
+    {
+      "path": "artifacts/grammar-robust/config.json",
+      "bytes": 1069,
+      "sha256": "1d24a71483e47545d9271938ea351a330886b2cc9b3225efb2943e8417e88e02"
+    },
+    {
+      "path": "artifacts/grammar-robust/head.pt",
+      "bytes": 2032853,
+      "sha256": "f31f3d1a069f6b47689488360a837341763587a116df08764f2f316206436d73"
+    },
+    {
+      "path": "artifacts/grammar-robust/summary.json",
+      "bytes": 705,
+      "sha256": "bad1e7eda5dcb4f709062309a57af17e8ee26c693d20f3604701837e5f13bfc4"
+    },
+    {
+      "path": "artifacts/plan-comparison/summary.json",
+      "bytes": 6893,
+      "sha256": "872d18f5f5f24e04c56a834416a67a2417b64e88eec7634b198ab2167758832b"
+    },
+    {
+      "path": "artifacts/pretrained/bert-base-uncased/LICENSE",
+      "bytes": 11356,
+      "sha256": "43070e2d4e532684de521b885f385d0841030efa2b1a20bafb76133a5e1379c1"
+    },
+    {
+      "path": "artifacts/pretrained/bert-base-uncased/README.md",
+      "bytes": 10517,
+      "sha256": "9187b6018ea0010d884e78e098e328faa1b88b301570d0cce606bb35e4067e17"
+    },
+    {
+      "path": "artifacts/pretrained/bert-base-uncased/source.json",
+      "bytes": 1986,
+      "sha256": "ea5c946fff7358922f0d7ed8079be67b84770fade001d74e64658172122b44b0"
+    },
+    {
+      "path": "artifacts/v3-comparison.json",
+      "bytes": 691,
+      "sha256": "790742101026d77af4e2f2d208fc32c6a5540a70fa769326cb9ccc2ed25de4f5"
+    }
+  ]
+}

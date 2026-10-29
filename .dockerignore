@@ -15,3 +15,7 @@ frontend/dist
 .env.*
 *.pem
 *.key
+tmp
+output
+tests
+.github

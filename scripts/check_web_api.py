@@ -63,9 +63,10 @@ def main():
         and wrong["reports"][0]["counterexample"] == []
     )
     assert not wrong["renderable"] and wrong["trace"] is None
-    unverified = task({**fixture, "source": "rule", "example_id": None})
+    unverified = task({**fixture, "source": "manual", "candidate_json": json.dumps(pattern_dfa("01").to_dict()), "example_id": None})
     assert (
-        unverified["status"] == "REFERENCE_UNAVAILABLE" and unverified["trace"] is None
+        unverified["status"] == "REFERENCE_UNAVAILABLE" and unverified["trace"] is not None
+        and unverified["graph"] and not unverified["verified"] and not unverified["renderable"]
     )
     gate = task({"kind": "render", "result_id": unverified["id"]}, failure=True)
     assert "VerifiedDFA" in gate["error"]
@@ -83,7 +84,8 @@ def main():
             **fixture,
             "description": "Binary strings that end in 01010101.",
             "input": "01010101",
-            "source": "rule",
+            "source": "manual",
+            "candidate_json": json.dumps(large.to_dict()),
             "reference_json": json.dumps(large.to_dict()),
         }
     )

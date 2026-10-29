@@ -106,6 +106,35 @@ def test_first_candidate_count_is_argmax():
     assert len(next(decode_candidates(out, 1)).states) == 4
 
 
+def test_cached_lower_bert_matches_full_forward_and_trains_upper_layers():
+    backbone = BertModel(BertConfig(vocab_size=20, hidden_size=32, num_hidden_layers=3,
+                                    num_attention_heads=4, intermediate_size=64))
+    model = StructuredModel(backbone, fine_tune_layers=1).eval()
+    ids = torch.tensor([[2, 3, 4, 0], [2, 4, 5, 6]])
+    mask = (ids != 0).long()
+    with torch.no_grad():
+        full = model(ids, mask)
+        hidden = model.encode_lower(ids, mask)
+        cached = model.forward_cached(hidden, mask)
+    assert all(torch.allclose(full[k], cached[k], atol=1e-6) for k in full)
+    model.train()
+    loss, _ = structured_loss(model.forward_cached(hidden, mask), targets([pattern_dfa("01"), pattern_dfa("0")], 8, "cpu"))
+    loss.backward()
+    assert model.backbone.encoder.layer[-1].attention.self.query.weight.grad.abs().sum() > 0
+    assert model.backbone.encoder.layer[0].attention.self.query.weight.grad is None
+
+
+def test_learned_prediction_refuses_silent_truncation():
+    import pytest
+    from theorybert.baselines.predictors import Learned
+    class Tokenizer:
+        def encode(self, description):
+            return list(range(10))
+    predictor = Learned(None, Tokenizer(), {"variant": "theorybert", "max_length": 3})
+    with pytest.raises(ValueError, match="token limit"):
+        predictor.predict("A description that must remain intact")
+
+
 def test_validation_uses_configured_loss_weights(tmp_path):
     from theorybert.training.train import validation
 
@@ -171,3 +200,19 @@ def test_distilbert_update_and_reload(tmp_path):
     with torch.no_grad():
         a, b = model(**encoded), restored(**encoded)
     assert all(torch.equal(a[k], b[k]) for k in a)
+
+
+def test_mapped_cpu_loader_preserves_every_weight_and_output(tmp_path):
+    config={'output':str(tmp_path),'variant':'theorybert','max_states':8,'initialisation':'subword_mean','seed':42}
+    original,tokenizer,audit=build(config,tiny=True)
+    original.eval()
+    save_checkpoint(tmp_path/'mapped',original,tokenizer,config,audit)
+    mapped,_,_=load_checkpoint(tmp_path/'mapped',memory_efficient=True)
+    for name,value in original.state_dict().items():
+        assert torch.equal(value,mapped.state_dict()[name]),name
+    batch=tokenizer(['binary strings that end in 00101','an even count of 1'],padding=True,return_tensors='pt')
+    args={k:v for k,v in batch.items() if k in ('input_ids','attention_mask')}
+    with torch.inference_mode():
+        before=original(**args);after=mapped(**args)
+    assert all(torch.equal(before[k],after[k]) for k in before)
+    assert not any(b.is_meta for b in mapped.buffers())

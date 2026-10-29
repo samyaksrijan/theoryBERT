@@ -1,0 +1,127 @@
+[
+  {
+    "id": 1,
+    "text": "J. Devlin, M.-W. Chang, K. Lee, and K. Toutanova, \"BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding,\" NAACL-HLT, pp. 4171-4186, 2019.",
+    "url": "https://aclanthology.org/N19-1423/"
+  },
+  {
+    "id": 2,
+    "text": "N. Kushman and R. Barzilay, \"Using Semantic Unification to Generate Regular Expressions from Natural Language,\" NAACL-HLT, pp. 826-836, 2013.",
+    "url": "https://aclanthology.org/N13-1103/"
+  },
+  {
+    "id": 3,
+    "text": "N. Locascio, K. Narasimhan, E. DeLeon, N. Kushman, and R. Barzilay, \"Neural Generation of Regular Expressions from Natural Language with Minimal Domain Knowledge,\" EMNLP, pp. 1918-1923, 2016.",
+    "url": "https://aclanthology.org/D16-1197/"
+  },
+  {
+    "id": 4,
+    "text": "W. Tai, H. T. Kung, X. Dong, M. Comiter, and C.-F. Kuo, \"exBERT: Extending Pre-trained Models with Domain-specific Vocabulary Under Constrained Training Resources,\" Findings of EMNLP, pp. 1433-1439, 2020.",
+    "url": "https://aclanthology.org/2020.findings-emnlp.129/"
+  },
+  {
+    "id": 5,
+    "text": "J. Herzig et al., \"Unlocking Compositional Generalization in Pre-trained Models Using Intermediate Representations,\" arXiv:2104.07478, 2021.",
+    "url": "https://arxiv.org/abs/2104.07478"
+  },
+  {
+    "id": 6,
+    "text": "T. Scholak, N. Schucher, and D. Bahdanau, \"PICARD: Parsing Incrementally for Constrained Auto-Regressive Decoding from Language Models,\" EMNLP, pp. 9895-9901, 2021.",
+    "url": "https://aclanthology.org/2021.emnlp-main.779/"
+  },
+  {
+    "id": 7,
+    "text": "M. T. Ribeiro, T. Wu, C. Guestrin, and S. Singh, \"Beyond Accuracy: Behavioral Testing of NLP Models with CheckList,\" ACL, pp. 4902-4912, 2020.",
+    "url": "https://aclanthology.org/2020.acl-main.442/"
+  },
+  {
+    "id": 8,
+    "text": "I. Oren, J. Herzig, N. Gupta, M. Gardner, and J. Berant, \"Improving Compositional Generalization in Semantic Parsing,\" Findings of EMNLP, 2020.",
+    "url": "https://aclanthology.org/2020.findings-emnlp.225/"
+  },
+  {
+    "id": 9,
+    "text": "N. Locascio, DeepRegex code and KB13 dataset mirror, revision 096490db7f4b0394fbb46b914cb35a0aa1cba29c, MIT dataset license.",
+    "url": "https://github.com/nicholaslocascio/deep-regex/tree/096490db7f4b0394fbb46b914cb35a0aa1cba29c/datasets/KB13"
+  },
+  {
+    "id": 10,
+    "text": "Google BERT community / Hugging Face, bert-base-uncased model card and weights, revision 86b5e0934494bd15c9632b12f734a8a67f723594.",
+    "url": "https://huggingface.co/google-bert/bert-base-uncased"
+  },
+  {
+    "id": 11,
+    "text": "NLTK Project, nltk.parse.earleychart: Incremental chart parsing documentation.",
+    "url": "https://www.nltk.org/api/nltk.parse.earleychart.html"
+  },
+  {
+    "id": 12,
+    "text": "Cornell CS 4120, \"Automating Lexical Analysis,\" course notes, Spring 2023.",
+    "url": "https://www.cs.cornell.edu/courses/cs4120/2023sp/notes/leximpl/"
+  },
+  {
+    "id": 13,
+    "text": "TheoryBERT project repository, local implementation and recorded experiments. The local working tree contains changes that may not yet be published.",
+    "url": "https://github.com/samyaksrijan/theoryBERT"
+  },
+  {
+    "id": 14,
+    "text": "A. Vaswani et al., \"Attention Is All You Need,\" Advances in Neural Information Processing Systems, vol. 30, 2017.",
+    "url": "https://proceedings.neurips.cc/paper_files/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html"
+  },
+  {
+    "id": 15,
+    "text": "Y. Liu et al., \"RoBERTa: A Robustly Optimized BERT Pretraining Approach,\" arXiv:1907.11692, 2019.",
+    "url": "https://arxiv.org/abs/1907.11692"
+  },
+  {
+    "id": 16,
+    "text": "J. Lee et al., \"BioBERT: a pre-trained biomedical language representation model for biomedical text mining,\" Bioinformatics, vol. 36, no. 4, pp. 1234-1240, 2020.",
+    "url": "https://academic.oup.com/bioinformatics/article/36/4/1234/5566506"
+  },
+  {
+    "id": 17,
+    "text": "G. Deletang et al., \"Neural Networks and the Chomsky Hierarchy,\" ICLR, 2023; arXiv:2207.02098.",
+    "url": "https://arxiv.org/abs/2207.02098"
+  },
+  {
+    "id": 18,
+    "text": "L. Strobl, W. Merrill, G. Weiss, D. Chiang, and D. Angluin, \"What Formal Languages Can Transformers Express? A Survey,\" TACL, vol. 12, pp. 543-561, 2024.",
+    "url": "https://aclanthology.org/2024.tacl-1.30/"
+  },
+  {
+    "id": 19,
+    "text": "L. J. Weber, K. J. Ramalingam, M. Beyer, A. Kirchheim, and A. Zimmermann, \"Efficient Token Augmented Fine-Tuning,\" IEEE Asia-Pacific Conference on Computer Science and Data Engineering (CSDE), 2023, doi:10.1109/CSDE59766.2023.10487678.",
+    "url": "https://doi.org/10.1109/CSDE59766.2023.10487678"
+  },
+  {
+    "id": 20,
+    "text": "M. Ryu and K. Lee, \"Knowledge Distillation for BERT Unsupervised Domain Adaptation,\" arXiv:2010.11478, 2020.",
+    "url": "https://arxiv.org/abs/2010.11478"
+  },
+  {
+    "id": 21,
+    "text": "M. R. Linder, \"Vocabulary Expansion of Large Language Models via Self-Distillation,\" M.S. thesis, KTH Royal Institute of Technology, Jan. 2026; arXiv:2508.15807v2.",
+    "url": "https://arxiv.org/pdf/2508.15807"
+  },
+  {
+    "id": 22,
+    "text": "M. Alper, M. Fiman, and H. Averbuch-Elor, \"Is BERT Blind? Exploring the Effect of Vision-and-Language Pretraining on Visual Language Understanding,\" CVPR, 2023.",
+    "url": "https://openaccess.thecvf.com/content/CVPR2023/papers/Alper_Is_BERT_Blind_Exploring_the_Effect_of_Vision-and-Language_Pretraining_on_CVPR_2023_paper.pdf"
+  },
+  {
+    "id": 23,
+    "text": "J. Zhang, F. Shi, C. Xu, Y. Li, X. Yin, and M. Ge, \"CyMapNER: a named entity recognition model for cyberspace surveying and mapping domain,\" Cybersecurity, vol. 9, art. 146, 2026.",
+    "url": "https://link.springer.com/article/10.1186/s42400-026-00578-3"
+  },
+  {
+    "id": 24,
+    "text": "D. Stammbach and P. Henderson, \"Legal Domain Adaptation of Modern BERT Models,\" arXiv:2606.28538, 2026.",
+    "url": "https://arxiv.org/abs/2606.28538"
+  },
+  {
+    "id": 25,
+    "text": "S. Xu et al., \"Fine-tuned LLMs Know More, Hallucinate Less with Few-Shot Sequence-to-Sequence Semantic Parsing over Wikidata,\" EMNLP, pp. 5778-5791, 2023.",
+    "url": "https://aclanthology.org/2023.emnlp-main.353/"
+  }
+]

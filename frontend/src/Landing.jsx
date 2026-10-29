@@ -824,7 +824,7 @@ export default function Landing({
           <Link to="/research">Research</Link>
           <button onClick={openGuide}>Quick guide</button>
         </nav>
-        <span>Built to explore. Verified before visualised.</span>
+        <span>Explore structures. Inspect the evidence.</span>
       </footer>
     </div>
   );

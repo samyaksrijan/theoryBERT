@@ -1,5 +1,9 @@
 # Executed validation
 
+## Local learned engine — 28 October 2026
+
+The pretrained-BERT training, dataset conversion, memory guards, and current learned/default UI workflow are described in [LOCAL-BERT.md](LOCAL-BERT.md). The expanded automated suite passes 52 tests, including frozen-encoder cache equivalence and upper-layer gradients, independent regex conversion checks, split leakage checks, resource limits, manual DFA previews, and absence of rule fallback. Final measured equivalence is 62.5% for the first prediction and 80.2% within five candidates against an independent reference on 379 held-out descriptions. Desktop/mobile checks, HTTP checks, and a fresh BERT-to-verified-MP4 export passed. The earlier validation sections below describe historical versions of the product.
+
 ## React product follow-up — 24 October 2026
 
 The primary interface is now the five-page React product. The Streamlit inspection below documents the earlier interface and is retained as historical evidence.
@@ -98,3 +102,9 @@ Run the browser scripts sequentially. They perform actual local renders; do not 
 No concrete dependency blocker remains on this Mac. There is **no genuinely trained pretrained BERT checkpoint**. Vanilla/adapted research training, multi-seed initialisation ablations, DistilBERT research experiments and optional paid LLM evaluation were not run. `scripts/ablation.py` produces explicit not-run rows; it does not invent mean/std values.
 
 Windows/Linux instructions are documented but were not executed. The v1 learned task is binary and bounded to eight states. Visualisation is intentionally bounded: 40 DFA input symbols and parse trees of at most 45 nodes, 12 leaves and ten levels. Dense automata can have crossing curves; deterministic placement keeps node and label positions stable and the execution highlight identifies the traversed edge. Larger formal structures can still be inspected as tables/evidence, without pretending an unreadable video is useful.
+
+
+29 October 2026: BERT-only language analysis, expanded DFA fine-tuning, a cross-attention grammar decoder, automatic trace/tree updates, and compiler AST/IR analysis are documented in [INPUT-DEPENDENT-ENGINE.md](INPUT-DEPENDENT-ENGINE.md). The updated suite passed 73 tests, and real BERT browser workflows passed with five screenshots and no page errors. Prior validation records above remain historical.
+
+
+29 October 2026, fresh-challenge stage: 165 frozen cases, validation-gated adaptation, retained DFA model, promoted grammar decoder, 79 passing tests, passing real-BERT browser and HTTP/video checks, and final resource audit are recorded in [FRESH-CHALLENGE.md](FRESH-CHALLENGE.md). The earlier generated-template scores remain separate from these unfamiliar-wording results.

@@ -148,13 +148,8 @@ def main():
             page.get_by_label("Prediction source", exact=True).select_option("learned")
             expect(
                 page.get_by_role("button", name="Build & verify", exact=True)
-            ).to_be_disabled()
-            expect(
-                page.get_by_text(
-                    "Choose a checkpoint in workspace settings.", exact=True
-                )
-            ).to_be_visible()
-            shot("dfa-missing-checkpoint")
+            ).to_be_enabled()
+            shot("dfa-learned-ready")
             page.get_by_label("Prediction source", exact=True).select_option("rule")
             page.get_by_label("Language description", exact=False).fill(
                 "Binary strings that contain 01."
@@ -217,7 +212,9 @@ def main():
             expect(page.get_by_label("Search examples", exact=True)).to_be_visible()
             shot("examples-mobile")
             visit("/research")
-            expect(page.get_by_text("20%", exact=True).first).to_be_visible()
+            measured = context.request.get(args.base_url + "/api/research").json()
+            score = (measured.get("learned") or measured["baseline"])["semantic"]["raw_equivalence"]
+            expect(page.locator(".big-metric b")).to_have_text(f"{score * 100:.0f}%")
             shot("research-mobile")
             visit("/dfa")
             page.get_by_role("button", name="Ends in 01", exact=True).click()

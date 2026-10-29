@@ -53,6 +53,8 @@ def render_key(payload, quality="preview"):
 def payload_for(evidence, symbols=None):
     if isinstance(evidence, VerifiedDFA):
         d = canonicalise(evidence.checked())
+        if len(d.states) > 8:
+            raise ValueError("Video export supports at most 8 states. The interactive canvas and transition table support up to 64.")
         graph_layout(d)
         symbols = list(symbols or [])
         if len(symbols) > 40:

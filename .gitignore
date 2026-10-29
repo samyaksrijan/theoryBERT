@@ -16,3 +16,4 @@ frontend/dist/
 !.env.example
 *.pem
 *.key
+tmp/

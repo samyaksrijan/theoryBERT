@@ -26,7 +26,12 @@ export async function runTask(payload, onPhase) {
     const task = await api(`/jobs/${job_id}`);
     onPhase?.(task.phase);
     if (task.status === "complete") return task.result;
-    if (task.status === "error") throw new Error(task.error);
+    if (task.status === "error") {
+      const error = new Error(task.error);
+      error.kind = task.error_kind;
+      error.candidateGrammar = task.candidate_grammar;
+      throw error;
+    }
     await new Promise((resolve) => setTimeout(resolve, 300));
   }
   throw new Error(

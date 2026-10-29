@@ -2,6 +2,7 @@
 
 import argparse
 from collections import OrderedDict
+from contextlib import asynccontextmanager
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 import importlib.util
@@ -21,7 +22,9 @@ from theorybert.contracts import DFA, strict_json
 from theorybert.data.generators import benchmark_examples
 from theorybert.formal.cfg import EXAMPLES, check_tree, parse
 from theorybert.formal.dfa import canonicalise, trace, validate
+from theorybert.formal.analysis import machine_analysis, grammar_analysis, tokenize_input
 from theorybert.pipeline import run_candidates
+from theorybert.models.predictor import checkpoint_weights, load_predictor
 from theorybert.rendering.layout import graph_layout, tree_layout
 from theorybert.rendering.renderer import payload_for, render, seal_tree
 
@@ -38,9 +41,36 @@ jobs = OrderedDict()
 results = OrderedDict()
 
 
+def active_checkpoint():
+    """Only an explicitly activated, evaluated real model becomes the default."""
+    try:
+        active = json.loads((ROOT / "artifacts" / "active-model.json").read_text())
+        path = ROOT / active["checkpoint"]
+        config = json.loads((path / "config.json").read_text())
+        if not checkpoint_weights(path).is_file() or "smoke" in config.get("training_status", ""):
+            return None
+        return active
+    except (OSError, ValueError, KeyError):
+        return None
+
+
 def graph_data(dfa):
     nodes, edges = graph_layout(dfa)
     return {"nodes": nodes, "edges": edges}
+
+
+def active_grammar():
+    pointer = ROOT / "artifacts/active-grammar.json"
+    if pointer.is_file():
+        try:
+            active = json.loads(pointer.read_text())
+            path = ROOT / active["checkpoint"]
+        except (OSError, ValueError, KeyError):
+            return None
+    else:
+        active = {"checkpoint": "artifacts/bert-grammar", "summary": "artifacts/bert-grammar/summary.json"}
+        path = ROOT / active["checkpoint"]
+    return active if (path / "head.pt").is_file() and (path / "config.json").is_file() else None
 
 
 def tree_data(tree):
@@ -52,12 +82,23 @@ def tree_data(tree):
     }
 
 
-@lru_cache(maxsize=3)
-def learned_checkpoint(path, weights_stamp, config_stamp):
-    from theorybert.baselines.predictors import Learned
+@lru_cache(maxsize=1)
+def encoder_checkpoint(path, weights_stamp, config_stamp):
+    import torch
     from theorybert.models.theorybert import load_checkpoint
+    torch.set_num_threads(max(1, int(os.environ.get("THEORYBERT_TORCH_THREADS", "1" if os.environ.get("THEORYBERT_HOSTED") == "1" else "2"))))
+    return load_checkpoint(path)[:2]
 
-    return Learned(*load_checkpoint(path))
+
+def shared_encoder(path):
+    path = Path(path).resolve()
+    return encoder_checkpoint(str(path), (path / "weights.pt").stat().st_mtime_ns,
+                              (path / "config.json").stat().st_mtime_ns)
+
+
+@lru_cache(maxsize=1)
+def learned_checkpoint(path, weights_stamp, config_stamp):
+    return load_predictor(path, shared_encoder)
 
 
 def reference_for(data, selected):
@@ -79,10 +120,20 @@ def reference_for(data, selected):
     )
 
 
+@lru_cache(maxsize=1)
+def learned_grammar(path, head_stamp, encoder_stamp):
+    from theorybert.models.grammar import GrammarPredictor
+    config = json.loads((Path(path) / "config.json").read_text())
+    base = ROOT / config["encoder_checkpoint"]
+    return GrammarPredictor(path, shared_encoder(base))
+
+
 def solve_dfa(data, phase):
     description = data.get("description", "").strip()
     text = data.get("input", "")
-    source = data.get("source", "demo")
+    source = data.get("source", "learned")
+    if source == "manual" and not description:
+        description = "User-supplied DFA"
     budget = int(data.get("budget", 5))
     if not description or len(description) > 4000:
         raise ValueError("Describe your language in 1–4,000 characters.")
@@ -102,8 +153,10 @@ def solve_dfa(data, phase):
         ),
         None,
     )
-    reference, provenance = reference_for(data, selected)
+    reference, provenance = reference_for(data, None if source == "manual" else selected)
+    prediction_budget = budget if reference is not None else 1
     phase("predicting")
+    plans = []
     if source == "demo":
         if not selected:
             raise ValueError(
@@ -126,39 +179,51 @@ def solve_dfa(data, phase):
             [candidate],
             "Deliberately incorrect fixture · complemented accepting states",
         )
-    elif source == "rule":
-        from theorybert.baselines.predictors import RuleBased
-
-        predictor = RuleBased()
-        candidates, identity = (
-            list(predictor.predict(description, budget)),
-            predictor.source,
-        )
+    elif source == "manual":
+        raw = data.get("candidate_json", "")
+        if not isinstance(raw, str) or not raw.strip() or len(raw) > 120000:
+            raise ValueError("Paste your DFA JSON, up to 120 KB.")
+        candidate = DFA.from_dict(strict_json(raw))
+        errors = validate(candidate)
+        if errors:
+            raise ValueError("Your DFA: " + " ".join(errors))
+        if set(candidate.alphabet) != {"0", "1"} or len(candidate.states) > 64:
+            raise ValueError("This studio supports alphabet [0, 1] and at most 64 states.")
+        candidates, identity = [candidate], "User-supplied DFA · structural validation and simulation"
     elif source == "learned":
-        path = Path(data.get("checkpoint", "")).expanduser()
+        active = active_checkpoint()
+        requested = data.get("checkpoint", "") or (active["checkpoint"] if active else "")
+        path = Path(requested).expanduser()
         if not path.is_absolute():
             path = ROOT / path
-        if not (path / "weights.pt").is_file() or not (path / "config.json").is_file():
+        if not (path / "config.json").is_file() or not checkpoint_weights(path).is_file():
             raise ValueError(
                 "No checkpoint found. Choose a local checkpoint in Settings or use a reference demonstration."
             )
+        config = json.loads((path / "config.json").read_text())
+        if "smoke" in config.get("training_status", "") or "tiny-random" in config.get("backbone", ""):
+            raise ValueError("This is a random-backbone smoke checkpoint, not a trained pretrained BERT model. Select the evaluated real model.")
         predictor = learned_checkpoint(
             str(path.resolve()),
-            (path / "weights.pt").stat().st_mtime_ns,
+            checkpoint_weights(path).stat().st_mtime_ns,
             (path / "config.json").stat().st_mtime_ns,
         )
-        candidates, identity = (
-            list(predictor.predict(description, budget)),
-            predictor.source,
-        )
+        if hasattr(predictor, "predict_with_plans"):
+            plans = predictor.predict_with_plans(description, prediction_budget)
+            candidates = [p["dfa"] for p in plans]
+        else:
+            candidates = list(predictor.predict(description, prediction_budget))
+        identity = predictor.source
     else:
         raise ValueError("Choose a supported prediction source.")
     phase("verifying")
     result = run_candidates(candidates, reference, provenance, identity, budget)
     public = {
         "mode": "dfa",
+        "prediction_source": source,
         "source": identity,
         "description": description,
+        "language_plan": next((p["plan"].to_dict() for p in plans if result.candidate and p["dfa"].to_dict() == result.candidate.to_dict()), None),
         "input": text,
         "reports": [r.to_dict() for r in result.reports],
         "status": result.reports[-1].status.value,
@@ -176,7 +241,7 @@ def solve_dfa(data, phase):
     if result.candidate and not validate(result.candidate):
         public["minimised_candidate"] = canonicalise(result.candidate).to_dict()
     if result.verified:
-        dfa = canonicalise(result.verified.checked())
+        dfa = result.verified.checked() if source == "manual" else canonicalise(result.verified.checked())
         public["dfa"] = dfa.to_dict()
         public["trace"] = trace(dfa, list(text)).to_dict()
         try:
@@ -185,19 +250,70 @@ def solve_dfa(data, phase):
             public["renderable"] = importlib.util.find_spec("manim") is not None
         except ValueError as exc:
             public["visual_error"] = str(exc)
+    elif result.candidate and not validate(result.candidate) and public["status"] == "REFERENCE_UNAVAILABLE":
+        # Inspection and simulation do not constitute a proof against English.
+        dfa = result.candidate if source == "manual" else canonicalise(result.candidate)
+        public["dfa"] = dfa.to_dict()
+        public["trace"] = trace(dfa, list(text)).to_dict()
+        notice = "Your supplied DFA: structure checked; simulation follows your transitions. " if source == "manual" else "BERT candidate preview: structure checked. "
+        public["visualization_notice"] = notice + "Equivalence to an independent reference has not been established."
+        try:
+            public["graph"] = graph_data(dfa)
+        except ValueError as exc:
+            public["visual_error"] = str(exc)
+    if public["dfa"]:
+        public["analysis"] = machine_analysis(DFA.from_dict(public["dfa"]), list(text))
     return public, {"evidence": result.verified, "symbols": list(text)}
 
 
 def solve_cfg(data, phase):
     grammar, text = data.get("grammar", ""), data.get("input", "")
+    grammar_source = data.get("grammar_source", "supplied")
+    description = data.get("description", "")
+    neural_source = None
+    if grammar_source == "learned":
+        with lock:
+            previous = results.get(data.get("grammar_result_id"))
+        active = active_grammar()
+        if active is None:
+            raise ValueError("No trained BERT grammar decoder is installed. Train the grammar model; no example grammar will be substituted.")
+        path = ROOT / active["checkpoint"]
+        revision = (path / "head.pt").stat().st_mtime_ns
+        reusable = previous and previous["public"].get("grammar_source") == "learned" and previous["public"].get("description") == description and previous["public"].get("grammar_model_checkpoint") == active["checkpoint"] and previous["public"].get("grammar_model_revision") == revision
+        config = json.loads((path / "config.json").read_text())
+        base = ROOT / config["encoder_checkpoint"]
+        if reusable:
+            grammar = previous["public"]["grammar"]
+            neural_source = previous["private"]["neural_source"]
+        else:
+            phase("predicting")
+            predictor = learned_grammar(str(path), (path / "head.pt").stat().st_mtime_ns, (base / "weights.pt").stat().st_mtime_ns)
+            grammar = predictor.predict(description)
+            neural_source = predictor.source
+    elif grammar_source != "supplied":
+        raise ValueError("Choose BERT generation or a supplied formal CFG.")
     limit = int(data.get("limit", 5))
     phase("parsing")
-    spec, trees, truncated = parse(
-        grammar,
-        text.split(),
-        limit,
-        timeout=min(60, max(1, float(os.environ.get("THEORYBERT_PARSE_TIMEOUT", "8")))),
-    )
+    tokenization = data.get("tokenization", "literal")
+    try:
+        if tokenization == "expression":
+            from theorybert.formal.compiler import ARITHMETIC_GRAMMAR, lex_expression
+            from theorybert.models.grammar import grammar_identity
+            if grammar_identity(grammar) != grammar_identity(ARITHMETIC_GRAMMAR):
+                raise ValueError("The arithmetic compiler uses its displayed precedence grammar. Choose the Arithmetic compiler preset again, or select grammar-terminal tokenization for a custom grammar.")
+            lexemes = lex_expression(text)
+        else:
+            lexemes = tokenize_input(grammar, text, tokenization)
+        spec, trees, truncated = parse(
+            grammar,
+            [row["token"] for row in lexemes],
+            limit,
+            timeout=min(60, max(1, float(os.environ.get("THEORYBERT_PARSE_TIMEOUT", "8")))),
+        )
+    except ValueError as exc:
+        if neural_source:
+            exc.candidate_grammar = grammar
+        raise
     phase("verifying")
     displays, steps, errors = [], [], []
     for tree in trees:
@@ -213,21 +329,38 @@ def solve_cfg(data, phase):
         except ValueError as exc:
             displays.append(None)
             errors.append(str(exc))
-    return {
+    public = {
         "mode": "cfg",
-        "source": "NLTK Earley · independent derivation checker",
+        "source": (neural_source + " → " if neural_source else "") + "NLTK Earley · independent derivation checker",
+        "grammar_source": grammar_source,
+        "grammar_model_checkpoint": active["checkpoint"] if neural_source else None,
+        "grammar_model_revision": revision if neural_source else None,
+        "description": description,
+        "language_notice": "BERT generated these productions from your description. The selected derivation is independently checked; equivalence between the grammar and arbitrary English has not been proved." if neural_source else None,
         "status": "VERIFIED",
         "verified": True,
         "grammar": grammar,
         "input": text,
         "spec": spec.to_dict(),
+        "lexemes": lexemes,
+        "tokenization": tokenization,
+        "analysis": grammar_analysis(spec),
         "trees": [t.to_dict() for t in trees],
         "layouts": displays,
         "steps": steps,
         "truncated": truncated,
         "visual_errors": errors,
         "renderable": importlib.util.find_spec("manim") is not None,
-    }, {"spec": spec, "trees": trees}
+    }
+    if tokenization == "expression":
+        from theorybert.formal.compiler import compile_expression
+        compiler, ast = compile_expression(trees[0], lexemes)
+        try:
+            compiler["layout"] = tree_data(ast)
+        except ValueError as exc:
+            compiler["visual_error"] = str(exc)
+        public["compiler"] = compiler
+    return public, {"spec": spec, "trees": trees, "neural_source": neural_source}
 
 
 def run_job(job_id, kind, data):
@@ -294,6 +427,7 @@ def run_job(job_id, kind, data):
                 status="error",
                 error=str(exc),
                 error_kind=getattr(exc, "kind", "INPUT_OR_RUNTIME_ERROR"),
+                candidate_grammar=getattr(exc, "candidate_grammar", None),
             )
 
 
@@ -349,12 +483,45 @@ async def job_status(request):
         )
 
 
+async def simulate(request):
+    """Reuse the checked machine when only the test string changes."""
+    try:
+        raw = await request.body()
+        if len(raw) > 2048:
+            raise ValueError("Simulation request is too large.")
+        data = strict_json(raw.decode())
+        text = data.get("input", "")
+        if not isinstance(text, str) or len(text) > 40 or set(text) - set("01"):
+            raise ValueError("Use at most 40 binary input symbols.")
+        with lock:
+            item = results.get(data.get("result_id"))
+            if item is None or item["public"]["mode"] != "dfa" or not item["public"].get("dfa"):
+                raise ValueError("Build this machine again before simulating it.")
+            public = {**item["public"], "id": uuid.uuid4().hex, "input": text, "created_at": time.time()}
+            dfa = DFA.from_dict(public["dfa"])
+            public["trace"] = trace(dfa, list(text)).to_dict()
+            public["analysis"] = machine_analysis(dfa, list(text))
+            private = {**item["private"], "symbols": list(text)}
+            results[public["id"]] = {"public": public, "private": private}
+            while len(results) > 128:
+                results.popitem(last=False)
+        return JSONResponse(public)
+    except (ValueError, UnicodeDecodeError, AttributeError) as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+
 async def catalog(request):
+    from theorybert.formal.compiler import ARITHMETIC_GRAMMAR
+    grammar_descriptions = {
+        "Balanced a / b": "Build a context-free grammar for strings of the form a^n b^n for n >= 0.",
+        "Arithmetic": "Arithmetic expressions with identifiers, plus and multiplication, using standard precedence.",
+        "Ambiguous expression": "Ambiguous expressions with id and addition and no operator associativity.",
+    }
     checkpoints = []
     for path in sorted((ROOT / "artifacts").glob("*/best/config.json")):
-        if not (path.parent / "weights.pt").is_file():
-            continue
         try:
+            if not checkpoint_weights(path.parent).is_file():
+                continue
             config = json.loads(path.read_text())
             checkpoints.append(
                 {
@@ -379,10 +546,14 @@ async def catalog(request):
                 for e in benchmark_examples()
             ],
             "cfg": [
-                {"id": name, "name": name, "grammar": grammar, "input": text}
+                {"id": name, "name": name, "grammar": grammar, "input": text, "description": grammar_descriptions[name]}
                 for name, (grammar, text) in EXAMPLES.items()
             ],
+            "compiler": {"grammar": ARITHMETIC_GRAMMAR, "input": "(total + 3) * scale - 4 / 2", "description": "Arithmetic expressions with identifiers and numbers, plus, minus, multiplication, division, parentheses, and unary signs; use standard precedence and left associativity."},
+            "grammar_model": active_grammar() is not None,
+            "active_grammar": active_grammar(),
             "checkpoints": checkpoints,
+            "active_model": active_checkpoint(),
         }
     )
 
@@ -392,8 +563,13 @@ async def health(request):
         {
             "status": "ready",
             "engine": "TheoryBERT",
+            "active_model": active_checkpoint(),
             "hosted": os.environ.get("THEORYBERT_HOSTED") == "1",
             "rendering": importlib.util.find_spec("manim") is not None,
+            "runtime": os.environ.get("THEORYBERT_RUNTIME", "local"),
+            "commit": os.environ.get("RENDER_GIT_COMMIT", "local"),
+            "active_grammar": active_grammar(),
+            "model_ready": bool(getattr(request.app.state, "model_ready", False)),
         }
     )
 
@@ -410,6 +586,14 @@ async def research(request):
                 continue
         return None
 
+    active = active_checkpoint()
+    evaluation = active.get("evaluation", "artifacts/bert-engine-evaluation") if active else "artifacts/bert-engine-evaluation"
+    training = active.get("training_summary", "artifacts/bert-engine/summary.json") if active else "artifacts/bert-engine/summary.json"
+    grammar_active = active_grammar()
+    learned = read_json(evaluation + "/summary.json")
+    if active and active.get("kind") == "semantic_plan" and learned:
+        measured = learned["test"]["candidate"]["original"]
+        learned = {"semantic": {**measured, "raw_equivalence": measured["first_equivalence"], "first_candidate_accuracy": measured["first_equivalence"], "success_within_budget": measured["within_five"], "prediction_seconds": measured["mean_prediction_seconds"], "supported": 1.0, "unique_languages": 74}}
     return JSONResponse(
         {
             "baseline": read_json("artifacts/evaluation/summary.json"),
@@ -417,6 +601,13 @@ async def research(request):
             "smoke": read_json("artifacts/smoke/summary.json"),
             "ablations": read_json("artifacts/ablations/aggregate.json"),
             "environment": read_json("artifacts/environment.json"),
+            "learned": learned,
+            "plan_comparison": read_json("artifacts/plan-comparison/summary.json"),
+            "learned_training": read_json(training),
+            "grammar_model": read_json(grammar_active.get("summary", "artifacts/bert-grammar/summary.json")) if grammar_active else None,
+            "challenge": read_json("artifacts/challenge-comparison.json"),
+            "comparison": read_json("artifacts/v3-comparison.json"),
+            "active_model": active,
         }
     )
 
@@ -454,13 +645,33 @@ async def frontend(request):
     )
 
 
+@asynccontextmanager
+async def lifespan(application):
+    application.state.model_ready = False
+    if os.environ.get("THEORYBERT_RUNTIME") == "bert":
+        active, grammar = active_checkpoint(), active_grammar()
+        if active is None or grammar is None:
+            raise RuntimeError("BERT deployment requires both evaluated active checkpoints.")
+        path = ROOT / active["checkpoint"]
+        learned_checkpoint(str(path), checkpoint_weights(path).stat().st_mtime_ns,
+                           (path / "config.json").stat().st_mtime_ns)
+        path = ROOT / grammar["checkpoint"]
+        base = ROOT / json.loads((path / "config.json").read_text())["encoder_checkpoint"]
+        learned_grammar(str(path), (path / "head.pt").stat().st_mtime_ns,
+                        (base / "weights.pt").stat().st_mtime_ns)
+        application.state.model_ready = True
+    yield
+
+
 app = Starlette(
+    lifespan=lifespan,
     routes=[
         Route("/api/health", health),
         Route("/api/catalog", catalog),
         Route("/api/research", research),
         Route("/api/jobs", submit, methods=["POST"]),
         Route("/api/jobs/{job_id}", job_status),
+        Route("/api/simulate", simulate, methods=["POST"]),
         Route("/api/videos/{name}", video),
         Route("/{path:path}", frontend),
     ]

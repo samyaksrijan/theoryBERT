@@ -41,12 +41,14 @@ class RuleBased:
 class Learned:
     def __init__(self, model, tokenizer, config):
         self.model, self.tokenizer, self.config = model, tokenizer, config
-        self.source = f"{config['variant']} · {config.get('backbone', 'tiny-random')} · {config.get('training_status', 'untrained')}"
+        self.source = f"{config['variant']} · {config.get('pretrained_source', config.get('backbone', 'tiny-random'))} · {config.get('training_status', 'untrained')}"
 
     def predict(self, description, budget=5):
         import torch
         from theorybert.models.decoding import decode_candidates
 
+        if len(self.tokenizer.encode(description)) > self.config.get("max_length", 96):
+            raise ValueError("This description exceeds the trained model's token limit. Shorten it so no requirement is silently truncated.")
         encoded = self.tokenizer(
             description,
             return_tensors="pt",

@@ -2,6 +2,7 @@
 
 import math
 import html
+from collections import deque, defaultdict
 
 NAVY = "#0D0C22"
 INDIGO = "#D03676"
@@ -17,7 +18,7 @@ PALETTE = [
     "#AF4E7D",
     "#6F65A8",
 ]
-VERSION = "theorybert-visual-3.1"
+VERSION = "theorybert-visual-4.0"
 
 
 def state_colour(i):
@@ -26,24 +27,44 @@ def state_colour(i):
 
 def graph_layout(d):
     n = len(d.states)
-    if n > 8:
+    if n > 64:
         raise ValueError(
-            "Visualisation supports at most 8 states. Inspect the transition table for larger DFAs."
+            "Interactive visualisation supports at most 64 states."
         )
     if n == 1:
         points = [(0.0, 0.0)]
     elif n == 2:
         points = [(-1.6, 0.0), (1.6, 0.0)]
-    elif n == 3:
-        points = [(-1.8, 0.0), (1.6, 1.45), (1.6, -1.45)]
     else:
-        points = [
-            (
-                3.1 * math.cos(math.pi - i * 2 * math.pi / n),
-                1.95 * math.sin(math.pi - i * 2 * math.pi / n),
-            )
-            for i in range(n)
-        ]
+        # Layout follows reachability depth, rather than a fixed diagram for a
+        # given state count. Cyclic counters get a circular arrangement.
+        nexts = {s: set(d.transitions[s].values()) - {s} for s in d.states}
+        cyclic = all(len(v) == 1 for v in nexts.values())
+        if cyclic:
+            walked, at = [], d.start_state
+            while at not in walked:
+                walked.append(at)
+                at = next(iter(nexts[at]))
+            cyclic = at == d.start_state and len(walked) == n
+        if cyclic:
+            radius = max(1.8, n * 0.42)
+            position = {s: (radius * math.cos(math.pi-i*2*math.pi/n), radius * math.sin(math.pi-i*2*math.pi/n)) for i, s in enumerate(walked)}
+        else:
+            depths, queue = {d.start_state: 0}, deque([d.start_state])
+            while queue:
+                source = queue.popleft()
+                for symbol in sorted(d.alphabet):
+                    target = d.transitions[source][symbol]
+                    if target not in depths:
+                        depths[target] = depths[source] + 1
+                        queue.append(target)
+            layers = defaultdict(list)
+            last = max(depths.values()) + 1
+            for s in d.states:
+                layers[depths.get(s, last)].append(s)
+            width = max(layers) * 2.25
+            position = {s: (depth * 2.25 - width/2, ((len(states)-1)/2-i)*2.05) for depth, states in layers.items() for i, s in enumerate(states)}
+        points = [position[s] for s in d.states]
     nodes = dict(zip(d.states, points))
     edges = []
     labels = []
